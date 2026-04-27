@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                 String        @id @default(cuid())
+  email              String        @unique
+  passwordHash       String?
+  role               UserRole      @default(CLIENT)
+  firstName          String
+  lastName           String
+  phone              String?
+  createdAt          DateTime      @default(now())
+  image              String?
+  locale             String        @default("fr")
+  clientAppointments Appointment[] @relation("ClientToAppointment")
+  pets               Pet[]
+  vetProfile         VetProfile?
+}
+
+model VetProfile {
+  id                 String              @id @default(cuid())
+  userId             String              @unique
+  photoUrl           String?
+  bio                String?
+  specialties        String[]
+  languagesSpoken    String[]
+  isActive           Boolean             @default(true)
+  slotDurationMin    Int                 @default(30)
+  city               String
+  lat                Float?
+  lng                Float?
+  rejectionReason    String?
+  status             VetStatus           @default(PENDING_ONBOARDING)
+  street             String
+  zipCode            String
+  appointments       Appointment[]
+  availabilityBlocks AvailabilityBlock[]
+  user               User                @relation(fields: [userId], references: [id])
+  workingHours       WorkingHour[]
+}
+
+model WorkingHour {
+  id           String     @id @default(cuid())
+  vetProfileId String
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+  vetProfile   VetProfile @relation(fields: [vetProfileId], references: [id])
+}
+
+model AvailabilityBlock {
+  id           String     @id @default(cuid())
+  vetProfileId String
+  startDate    DateTime
+  endDate      DateTime
+  reason       String?
+  vetProfile   VetProfile @relation(fields: [vetProfileId], references: [id])
+}
+
+model Pet {
+  id           String        @id @default(cuid())
+  clientId     String
+  name         String
+  species      String
+  breed        String?
+  archivedAt   DateTime?
+  birthDate    DateTime?
+  gender       Gender?
+  isArchived   Boolean       @default(false)
+  notes        String?
+  appointments Appointment[]
+  client       User          @relation(fields: [clientId], references: [id])
+}
+
+model Appointment {
+  id                   String            @id @default(cuid())
+  vetId                String
+  clientId             String
+  petId                String?
+  startTime            DateTime
+  endTime              DateTime
+  status               AppointmentStatus @default(PENDING)
+  reason               String
+  notes                String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  cancellationReason   String?
+  cancelledAt          DateTime?
+  cancelledBy          UserRole?
+  isEmergency          Boolean           @default(false)
+  reminder1hSentAt     DateTime?
+  reminder24hSentAt    DateTime?
+  rescheduledAt        DateTime?
+  snapshotPetBirthDate DateTime?
+  snapshotPetBreed     String?
+  snapshotPetGender    Gender?
+  snapshotPetName      String?
+  snapshotPetSpecies   String?
+  client               User              @relation("ClientToAppointment", fields: [clientId], references: [id])
+  pet                  Pet?              @relation(fields: [petId], references: [id])
+  vet                  VetProfile        @relation(fields: [vetId], references: [id])
+  emailLogs            EmailLog[]
+}
+
+model EmailLog {
+  id             String       @id @default(cuid())
+  appointmentId  String?
+  recipientEmail String
+  emailType      EmailType
+  sentAt         DateTime     @default(now())
+  appointment    Appointment? @relation(fields: [appointmentId], references: [id])
+}
+
+enum UserRole {
+  CLIENT
+  VET
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  DONE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum EmailType {
+  CONFIRMATION
+  REMINDER_24H
+  REMINDER_1H
+  CANCELLATION
+}
+
+enum VetStatus {
+  PENDING_ONBOARDING
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+}
