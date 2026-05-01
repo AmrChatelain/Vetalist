@@ -31,19 +31,24 @@ model VetProfile {
   bio                String?
   specialties        String[]
   languagesSpoken    String[]
+  careTypes          String[]
   isActive           Boolean             @default(true)
+  isVerified         Boolean             @default(false)
   slotDurationMin    Int                 @default(30)
+  clinicName         String?
+  clinicPhone        String?
   city               String
   lat                Float?
   lng                Float?
-  rejectionReason    String?
-  status             VetStatus           @default(PENDING_ONBOARDING)
   street             String
   zipCode            String
+  paymentMethods     String[]
+  rejectionReason    String?
+  status             VetStatus           @default(PENDING_ONBOARDING)
   appointments       Appointment[]
   availabilityBlocks AvailabilityBlock[]
-  user               User                @relation(fields: [userId], references: [id])
   workingHours       WorkingHour[]
+  user               User                @relation(fields: [userId], references: [id])
 }
 
 model WorkingHour {

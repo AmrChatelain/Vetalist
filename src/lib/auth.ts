@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";  // ← add this import
+import Google from "next-auth/providers/google";
 import prisma from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -18,7 +18,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   providers: [
-    Google({                                        // ← add this block
+    Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
@@ -31,6 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email },
+          select: { id: true, email: true, role: true, firstName: true, lastName: true, vetStatus: true }
         });
 
         if (!user) return null;
@@ -44,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           firstName: user.firstName,
           lastName: user.lastName,
+          vetStatus: user.vetStatus,
         };
       },
     }),
@@ -53,27 +55,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-          // 1. Normalize the email to lowercase for a safe comparison
           const email = user.email!.toLowerCase();
 
-          // 2. Check if user already exists using the normalized email
           const existingUser = await prisma.user.findUnique({
             where: { email },
           });
 
           if (!existingUser) {
-            // Create new user for first-time Google login
-            // We use the name from Google profile
-            const firstName = (profile as any)?.given_name || user.name?.split(" ")[0] || "First";
-            const lastName = (profile as any)?.family_name || user.name?.split(" ").slice(1).join(" ") || "Last";
+            const firstName =
+              (profile as any)?.given_name ||
+              user.name?.split(" ")[0] ||
+              "First";
+            const lastName =
+              (profile as any)?.family_name ||
+              user.name?.split(" ").slice(1).join(" ") ||
+              "Last";
 
             await prisma.user.create({
               data: {
-                email, // Use the normalized email here too!
+                email,
                 firstName,
                 lastName,
-                image: user.image, // This captures the Google profile picture
-                role: "CLIENT", 
+                image: user.image,
+                role: "CLIENT",
               },
             });
           }
@@ -86,16 +90,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Runs on initial sign-in (credentials or google)
       if (user) {
         token.id = user.id;
-        token.role = user.role;
-        token.image = user.image; // Pass the image to the JWT
-        // Handle both standard user object and Google profile name splitting
+        token.role = (user as any).role;
+        token.image = user.image;
         const nameParts = user.name?.split(" ") || ["", ""];
         token.firstName = (user as any).firstName || nameParts[0];
-        token.lastName = (user as any).lastName || nameParts.slice(1).join(" ") || "";
+        token.lastName =
+          (user as any).lastName || nameParts.slice(1).join(" ") || "";
       }
+
+      // Only runs ONCE on first Google sign-in.
+      // account is null on every subsequent request, so no repeat DB calls.
+      if (account?.provider === "google" && token.email) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email.toLowerCase() },
+            select: { id: true, role: true, firstName: true, lastName: true, vetStatus: true },
+          });
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.role = dbUser.role;
+            token.firstName = dbUser.firstName;
+            token.lastName = dbUser.lastName;
+            token.vetStatus = dbUser.vetStatus;
+          }
+        } catch (error) {
+          console.error("Failed to fetch user role from DB:", error);
+        }
+      }
+
       return token;
     },
 
@@ -105,7 +131,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as string;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
-        session.user.image = token.image as string; // Pass the image to the session
+        session.user.image = token.image as string;
+        session.user.vetStatus = token.vetStatus as string | null;
       }
       return session;
     },
