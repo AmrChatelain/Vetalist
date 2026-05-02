@@ -12,6 +12,15 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
   const [loading, setLoading] = useState(false)
 
+  function handleGoogleSignIn() {
+    // Set a short-lived cookie with the selected role BEFORE redirecting to Google.
+    // Because Google OAuth is a full-page redirect, React state is lost.
+    // The cookie survives the redirect and is readable in the NextAuth signIn
+    // callback on the server when Google redirects back to our app.
+    document.cookie = `pending_role=${role}; path=/; max-age=300; SameSite=Lax`;
+    signIn("google", { callbackUrl: "/dashboard" });
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
@@ -158,7 +167,6 @@ export default function RegisterPage() {
           font-weight: 300;
         }
 
-        /* Role Toggle */
         .role-toggle {
           display: flex;
           background: rgba(255,255,255,0.5);
@@ -197,7 +205,6 @@ export default function RegisterPage() {
         .role-btn.active.client { color: #a78bfa; }
         .role-btn.active.vet    { color: #f59e0b; }
 
-        /* Google btn */
         .google-btn {
           width: 100%;
           display: flex;
@@ -236,7 +243,6 @@ export default function RegisterPage() {
         .divider-line { flex: 1; height: 1px; background: rgba(0,0,0,0.08); }
         .divider-text { font-size: 0.75rem; color: #d1d5db; letter-spacing: 0.05em; }
 
-        /* Form fields */
         .form-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -300,7 +306,6 @@ export default function RegisterPage() {
           margin-bottom: 0.75rem;
         }
 
-        /* Kitty submit button */
         .submit-wrapper {
           display: flex;
           justify-content: center;
@@ -514,7 +519,6 @@ export default function RegisterPage() {
 
         <div className="reg-card">
 
-          {/* Header */}
           <div className="reg-header">
             <div className="logo-area">
               <div className="logo-icon">
@@ -528,7 +532,6 @@ export default function RegisterPage() {
             <p className="reg-subtitle">Join Vetalist and care for your furry family</p>
           </div>
 
-          {/* Role Toggle */}
           <div className="role-toggle">
             <button
               type="button"
@@ -552,14 +555,7 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          {/* Google */}
-          <button
-            type="button"
-            className="google-btn"
-            onClick={() => signIn("google", {
-              callbackUrl: role === "VET" ? "/dashboard/vet" : "/dashboard/client",
-            })}
-          >
+          <button type="button" className="google-btn" onClick={handleGoogleSignIn}>
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -569,14 +565,12 @@ export default function RegisterPage() {
             Continue with Google
           </button>
 
-          {/* Divider */}
           <div className="divider">
             <div className="divider-line" />
             <span className="divider-text">or</span>
             <div className="divider-line" />
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit}>
             <div className="form-grid">
               <div>
@@ -587,9 +581,7 @@ export default function RegisterPage() {
                   placeholder="Jane"
                   className={`field-input ${fieldErrors.firstName ? "has-error" : ""}`}
                 />
-                {fieldErrors.firstName && (
-                  <p className="field-error">{fieldErrors.firstName[0]}</p>
-                )}
+                {fieldErrors.firstName && <p className="field-error">{fieldErrors.firstName[0]}</p>}
               </div>
               <div>
                 <label className="field-label">Last Name</label>
@@ -599,9 +591,7 @@ export default function RegisterPage() {
                   placeholder="Doe"
                   className={`field-input ${fieldErrors.lastName ? "has-error" : ""}`}
                 />
-                {fieldErrors.lastName && (
-                  <p className="field-error">{fieldErrors.lastName[0]}</p>
-                )}
+                {fieldErrors.lastName && <p className="field-error">{fieldErrors.lastName[0]}</p>}
               </div>
             </div>
 
@@ -615,9 +605,7 @@ export default function RegisterPage() {
                 autoComplete="email"
                 className={`field-input ${fieldErrors.email ? "has-error" : ""}`}
               />
-              {fieldErrors.email && (
-                <p className="field-error">{fieldErrors.email[0]}</p>
-              )}
+              {fieldErrors.email && <p className="field-error">{fieldErrors.email[0]}</p>}
             </div>
 
             <div className="form-field">
@@ -631,32 +619,21 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 className={`field-input ${fieldErrors.password ? "has-error" : ""}`}
               />
-              {fieldErrors.password && (
-                <p className="field-error">{fieldErrors.password[0]}</p>
-              )}
+              {fieldErrors.password && <p className="field-error">{fieldErrors.password[0]}</p>}
             </div>
 
             {(error || Object.keys(fieldErrors).length > 0) && (
-              <div className="error-box">
-                {error && <p>{error}</p>}
-              </div>
+              <div className="error-box">{error && <p>{error}</p>}</div>
             )}
 
-            {/* Kitty Submit Button */}
             <div className="submit-wrapper">
               <button type="submit" className="kitty-btn" disabled={loading}>
-
                 <div className="particle p1">✦</div>
                 <div className="particle p2">🌸</div>
                 <div className="particle p3">✨</div>
 
-                {/* Orange tabby */}
                 <svg className="cat-orange" viewBox="0 0 50 50">
-                  <path
-                    className="tail"
-                    d="M8 42C2 35 2 20 8 15"
-                    stroke="#fcd34d" strokeWidth={4} strokeLinecap="round" fill="none"
-                  />
+                  <path className="tail" d="M8 42C2 35 2 20 8 15" stroke="#fcd34d" strokeWidth={4} strokeLinecap="round" fill="none"/>
                   <path d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45" fill="#fbbf24"/>
                   <path d="M15 18L8 5L22 15Z" fill="#fbbf24"/>
                   <path d="M15 18L11 9L19 15Z" fill="#fda4af"/>
@@ -672,7 +649,6 @@ export default function RegisterPage() {
                   <circle cx={31} cy={27} r="0.7" fill="white" opacity="0.8"/>
                 </svg>
 
-                {/* Cream cat */}
                 <svg className="cat-cream" viewBox="0 0 50 50">
                   <path d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45" fill="#fef3c7"/>
                   <path d="M15 18L8 8L22 15Z" fill="#fef3c7"/>
@@ -706,7 +682,6 @@ export default function RegisterPage() {
                   </div>
                   <div className="btn-glow" />
                 </div>
-
               </button>
             </div>
           </form>

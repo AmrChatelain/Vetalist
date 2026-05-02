@@ -4,6 +4,8 @@ import Google from "next-auth/providers/google";
 import prisma from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { cookies } from "next/headers";
+import { authConfig } from "./auth.config";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -11,17 +13,14 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
-
-  pages: {
-    signIn: "/login",
-  },
+  ...authConfig,
 
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
+
     Credentials({
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
@@ -31,21 +30,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, email: true, role: true, firstName: true, lastName: true, vetStatus: true }
+          select: {
+            id:           true,
+            email:        true,
+            role:         true,
+            firstName:    true,
+            lastName:     true,
+            passwordHash: true,
+            image:        true,
+            vetProfile: {
+              select: { status: true },
+            },
+          },
         });
 
-        if (!user) return null;
+        if (!user)             return null;
+        if (!user.passwordHash) return null; // Google-only account
 
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash!);
+        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
         if (!passwordMatch) return null;
 
         return {
-          id: user.id,
-          email: user.email,
-          role: user.role,
+          id:        user.id,
+          email:     user.email,
+          role:      user.role,
           firstName: user.firstName,
-          lastName: user.lastName,
-          vetStatus: user.vetStatus,
+          lastName:  user.lastName,
+          image:     user.image,
+          vetStatus: user.vetProfile?.status ?? null,
         };
       },
     }),
@@ -57,8 +69,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const email = user.email!.toLowerCase();
 
+          // Read the role cookie set by the register page just before OAuth redirect
+          const cookieStore = await cookies();
+          const pendingRole = cookieStore.get("pending_role")?.value;
+          const role: "CLIENT" | "VET" = pendingRole === "VET" ? "VET" : "CLIENT";
+
           const existingUser = await prisma.user.findUnique({
             where: { email },
+            select: { id: true, image: true },
           });
 
           if (!existingUser) {
@@ -76,49 +94,70 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email,
                 firstName,
                 lastName,
-                image: user.image,
-                role: "CLIENT",
+                image:        user.image,
+                role,
+                // passwordHash intentionally null — Google users have no password
               },
             });
+          } else if (!existingUser.image && user.image) {
+            await prisma.user.update({
+              where: { email },
+              data: { image: user.image },
+            });
           }
+
           return true;
         } catch (error) {
-          console.error("Error during Google sign-in:", error);
+          console.error("Google sign-in error:", error);
           return false;
         }
       }
       return true;
     },
 
-    async jwt({ token, user, account }) {
-      // Runs on initial sign-in (credentials or google)
+    async jwt({ token, user, trigger }) {
+      // 1. Fresh sign-in — populate token from the user object returned by authorize()
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role;
-        token.image = user.image;
-        const nameParts = user.name?.split(" ") || ["", ""];
-        token.firstName = (user as any).firstName || nameParts[0];
-        token.lastName =
-          (user as any).lastName || nameParts.slice(1).join(" ") || "";
+        token.id        = user.id;
+        token.role      = (user as any).role      ?? "CLIENT";
+        token.firstName = (user as any).firstName ?? "";
+        token.lastName  = (user as any).lastName  ?? "";
+        token.vetStatus = (user as any).vetStatus ?? null;
+        token.image     = user.image              ?? null;
       }
 
-      // Only runs ONCE on first Google sign-in.
-      // account is null on every subsequent request, so no repeat DB calls.
-      if (account?.provider === "google" && token.email) {
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { email: token.email.toLowerCase() },
-            select: { id: true, role: true, firstName: true, lastName: true, vetStatus: true },
-          });
-          if (dbUser) {
-            token.id = dbUser.id;
-            token.role = dbUser.role;
-            token.firstName = dbUser.firstName;
-            token.lastName = dbUser.lastName;
-            token.vetStatus = dbUser.vetStatus;
+      // 2. For Google sign-in, the user object from the signIn callback doesn't
+      //    contain our custom fields yet — fetch them from DB once after OAuth.
+      //    Also re-sync when the session is explicitly updated (trigger === "update").
+      if (trigger === "signIn" || trigger === "update") {
+        if (token.email) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { email: token.email.toLowerCase() },
+              select: {
+                id:        true,
+                role:      true,
+                firstName: true,
+                lastName:  true,
+                image:     true,
+                vetProfile: {
+                  select: { status: true },
+                },
+              },
+            });
+
+            if (dbUser) {
+              token.id        = dbUser.id;
+              token.role      = dbUser.role;
+              token.firstName = dbUser.firstName;
+              token.lastName  = dbUser.lastName;
+              token.image     = dbUser.image;
+              // vetStatus lives on the vetProfile relation, NOT on User directly
+              token.vetStatus = dbUser.vetProfile?.status ?? null;
+            }
+          } catch (error) {
+            console.error("JWT DB sync error:", error);
           }
-        } catch (error) {
-          console.error("Failed to fetch user role from DB:", error);
         }
       }
 
@@ -127,11 +166,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.id        = token.id        as string;
+        session.user.role      = token.role      as string;
         session.user.firstName = token.firstName as string;
-        session.user.lastName = token.lastName as string;
-        session.user.image = token.image as string;
+        session.user.lastName  = token.lastName  as string;
+        session.user.image     = token.image     as string;
         session.user.vetStatus = token.vetStatus as string | null;
       }
       return session;

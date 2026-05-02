@@ -47,6 +47,7 @@ model VetProfile {
   status             VetStatus           @default(PENDING_ONBOARDING)
   appointments       Appointment[]
   availabilityBlocks AvailabilityBlock[]
+  acceptsEmergencies Boolean @default(true)
   workingHours       WorkingHour[]
   user               User                @relation(fields: [userId], references: [id])
 }

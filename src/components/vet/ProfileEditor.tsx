@@ -239,8 +239,9 @@ export default function ProfileEditor() {
               </Button>
             )}
           </CardFooter>
-        </form>
+        
       </Card>
+      </form>
     </div>
   );
 }
