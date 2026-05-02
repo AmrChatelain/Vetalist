@@ -1,222 +1,508 @@
-"use client";
+"use client"
 
-import React, { useState, useMemo } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Search, 
-  Calendar as CalendarIcon, 
-  User as UserIcon, 
-  Dog 
-} from "lucide-react";
-import { confirmAppointment, cancelAppointment } from "@/actions/vet.actions";
-import { toast } from "sonner"; // Assuming sonner is used for toasts
-import { AppointmentStatus } from "@prisma/client";
-import { useRouter } from "next/router";
+import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import { confirmAppointment, cancelAppointment } from "@/actions/vet.actions"
+import { toast } from "sonner"
+import { AppointmentStatus } from "@prisma/client"
+import {
+  CheckCircle2, XCircle, Search,
+  Calendar as CalendarIcon, User as UserIcon, Dog,
+  Clock, ChevronDown,
+} from "lucide-react"
 
 interface AppointmentWithDetails {
-  id: string;
-  startTime: Date;
-  endTime: Date;
-  status: AppointmentStatus;
-  reason: string;
-  notes?: string | null;
-  client: {
-    firstName: string;
-    lastName: string;
-  };
-  pet?: {
-    name: string;
-    species: string;
-  } | null;
+  id: string
+  startTime: Date
+  endTime: Date
+  status: AppointmentStatus
+  reason: string
+  notes?: string | null
+  isEmergency: boolean
+  client: { firstName: string; lastName: string }
+  pet?: { name: string; species: string } | null
 }
 
 interface AppointmentTableProps {
-  initialAppointments: AppointmentWithDetails[];
+  initialAppointments: AppointmentWithDetails[]
+  title?: string
+  showPast?: boolean
 }
 
-const statusConfig = {
-  PENDING: { label: "Pending", variant: "outline" as const, color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
-  CONFIRMED: { label: "Confirmed", variant: "default" as const, color: "text-green-600 bg-green-50 border-green-200" },
-  CANCELLED: { label: "Cancelled", variant: "destructive" as const, color: "text-red-600 bg-red-50 border-red-200" },
-  DONE: { label: "Completed", variant: "secondary" as const, color: "text-gray-600 bg-gray-50 border-gray-200" },
-};
+const STATUS = {
+  PENDING:   { label: "Pending",   cls: "badge-pending"   },
+  CONFIRMED: { label: "Confirmed", cls: "badge-confirmed" },
+  CANCELLED: { label: "Cancelled", cls: "badge-cancelled" },
+  DONE:      { label: "Completed", cls: "badge-done"      },
+} as const
 
-export function AppointmentTable({ initialAppointments }: AppointmentTableProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isPending, setIsPending] = useState(false);
-  const router = useRouter();
+const FILTERS = ["All", "PENDING", "CONFIRMED", "DONE", "CANCELLED"] as const
 
-  // Filter logic: Search by Pet Name or Owner Name
-  const filteredAppointments = useMemo(() => {
-    return initialAppointments.filter((app) => {
-      const ownerName = `${app.client.firstName} ${app.client.lastName}`.toLowerCase();
-      const petName = app.pet?.name.toLowerCase() || "";
-      const query = searchQuery.toLowerCase();
-      return ownerName.includes(query) || petName.includes(query);
-    });
-  }, [initialAppointments, searchQuery]);
+export function AppointmentTable({
+  initialAppointments,
+  title = "Appointments",
+  showPast = false,
+}: AppointmentTableProps) {
+  const router = useRouter()
+  const [search, setSearch]       = useState("")
+  const [filter, setFilter]       = useState<string>("All")
+  const [isPending, setIsPending] = useState(false)
+  const [expanded, setExpanded]   = useState<string | null>(null)
 
-  const handleConfirm = async (id: string) => {
-    setIsPending(true);
-    const result = await confirmAppointment(id);
-    if (result.success) {
-      toast.success("Appointment confirmed");
-      
-      router.refresh(); 
+  const filtered = useMemo(() => {
+    return initialAppointments.filter((a) => {
+      const name    = `${a.client.firstName} ${a.client.lastName}`.toLowerCase()
+      const pet     = a.pet?.name.toLowerCase() ?? ""
+      const q       = search.toLowerCase()
+      const matchQ  = name.includes(q) || pet.includes(q)
+      const matchF  = filter === "All" || a.status === filter
+      return matchQ && matchF
+    })
+  }, [initialAppointments, search, filter])
+
+  async function handleConfirm(id: string) {
+    setIsPending(true)
+    const res = await confirmAppointment(id)
+    if (res.success) {
+      toast.success("Appointment confirmed")
+      router.refresh()
     } else {
-      toast.error(result.error || "Failed to confirm");
+      toast.error(res.error ?? "Failed to confirm")
     }
-    setIsPending(false);
-  };
+    setIsPending(false)
+  }
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("Are you sure you want to cancel this appointment?")) return;
-    
-    setIsPending(true);
-    const result = await cancelAppointment(id, "Cancelled by veterinarian");
-    if (result.success) {
-      toast.success("Appointment cancelled");
-      window.location.reload();
+  async function handleCancel(id: string) {
+    if (!confirm("Cancel this appointment?")) return
+    setIsPending(true)
+    const res = await cancelAppointment(id, "Cancelled by veterinarian")
+    if (res.success) {
+      toast.success("Appointment cancelled")
+      router.refresh()
     } else {
-      toast.error(result.error || "Failed to cancel");
+      toast.error(res.error ?? "Failed to cancel")
     }
-    setIsPending(false);
-  };
+    setIsPending(false)
+  }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="text-2xl font-bold tracking-tight">Appointments</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage your upcoming and past bookings.</p>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap');
+
+        .apt-table-wrap {
+          background: white;
+          border-radius: 14px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+        }
+
+        .apt-table-head {
+          padding: 20px 24px;
+          border-bottom: 1px solid #f1f5f9;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .apt-table-title {
+          font-family: 'Sora', sans-serif;
+          font-size: 1rem;
+          font-weight: 600;
+          color: #0f172a;
+        }
+
+        .apt-controls {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .apt-search {
+          position: relative;
+        }
+
+        .apt-search svg {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94a3b8;
+          pointer-events: none;
+        }
+
+        .apt-search input {
+          padding: 8px 12px 8px 32px;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          font-size: 0.8rem;
+          color: #1e293b;
+          background: #fafafa;
+          outline: none;
+          width: 220px;
+          font-family: 'DM Sans', sans-serif;
+          transition: border-color 0.2s;
+        }
+
+        .apt-search input:focus { border-color: #93c5fd; background: white; }
+        .apt-search input::placeholder { color: #cbd5e1; }
+
+        .filter-tabs {
+          display: flex;
+          gap: 4px;
+          background: #f8fafc;
+          padding: 3px;
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .filter-tab {
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          color: #64748b;
+          transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .filter-tab.active {
+          background: white;
+          color: #1e293b;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* Table */
+        .apt-table { width: 100%; border-collapse: collapse; }
+
+        .apt-table th {
+          text-align: left;
+          padding: 10px 16px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: #94a3b8;
+          background: #f8fafc;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .apt-table td {
+          padding: 14px 16px;
+          border-bottom: 1px solid #f8fafc;
+          font-size: 0.825rem;
+          color: #334155;
+          vertical-align: middle;
+        }
+
+        .apt-table tr:last-child td { border-bottom: none; }
+
+        .apt-table tr:hover td { background: #fafafa; }
+
+        .apt-table tr.expanded td { background: #f8fafc; }
+
+        /* Date cell */
+        .cell-date { font-family: 'Sora', sans-serif; font-size: 0.8rem; font-weight: 600; color: #0f172a; }
+        .cell-time { font-size: 0.72rem; color: #94a3b8; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
+
+        /* Client cell */
+        .cell-client { font-weight: 600; color: #1e293b; }
+        .cell-pet    { font-size: 0.72rem; color: #94a3b8; display: flex; align-items: center; gap: 3px; margin-top: 2px; }
+
+        /* Emergency tag */
+        .emg-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 0.6rem;
+          font-weight: 700;
+          color: #dc2626;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 4px;
+          padding: 1px 5px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-left: 6px;
+        }
+
+        /* Badges */
+        .apt-badge {
+          display: inline-block;
+          font-size: 0.7rem;
+          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: 20px;
+        }
+
+        .badge-pending   { background: #fffbeb; color: #d97706; }
+        .badge-confirmed { background: #f0fdf4; color: #059669; }
+        .badge-done      { background: #f1f5f9; color: #64748b; }
+        .badge-cancelled { background: #fef2f2; color: #dc2626; }
+
+        /* Action buttons */
+        .action-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 12px;
+          border-radius: 7px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: 1px solid transparent;
+          transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-confirm {
+          background: #f0fdf4;
+          color: #059669;
+          border-color: #bbf7d0;
+        }
+
+        .btn-confirm:hover:not(:disabled) { background: #dcfce7; }
+
+        .btn-cancel {
+          background: #fef2f2;
+          color: #dc2626;
+          border-color: #fecaca;
+        }
+
+        .btn-cancel:hover:not(:disabled) { background: #fee2e2; }
+
+        /* Expand row */
+        .expand-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #94a3b8;
+          padding: 2px;
+          display: flex;
+          align-items: center;
+          transition: color 0.15s;
+        }
+
+        .expand-btn:hover { color: #64748b; }
+
+        .expand-btn svg { transition: transform 0.2s; }
+        .expand-btn.open svg { transform: rotate(180deg); }
+
+        .notes-row td {
+          padding: 0 16px 14px;
+          font-size: 0.8rem;
+          color: #64748b;
+          background: #f8fafc;
+        }
+
+        .notes-inner {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 10px 14px;
+          font-size: 0.8rem;
+          line-height: 1.6;
+        }
+
+        .notes-label { font-weight: 600; color: #1e293b; font-size: 0.72rem; margin-bottom: 4px; }
+
+        .empty-state {
+          padding: 60px 24px;
+          text-align: center;
+          color: #94a3b8;
+        }
+
+        .empty-icon {
+          width: 48px; height: 48px;
+          background: #f1f5f9;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 12px;
+          color: #cbd5e1;
+        }
+
+        .empty-title { font-size: 0.9rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+        .empty-sub   { font-size: 0.8rem; }
+      `}</style>
+
+      <div className="apt-table-wrap">
+        {/* Header */}
+        <div className="apt-table-head">
+          <div className="apt-table-title">
+            {title}
+            <span style={{ marginLeft: 8, fontSize: "0.7rem", background: "#f1f5f9", color: "#64748b", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }}>
+              {filtered.length}
+            </span>
+          </div>
+          <div className="apt-controls">
+            {/* Filter tabs */}
+            <div className="filter-tabs">
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  className={`filter-tab ${filter === f ? "active" : ""}`}
+                  onClick={() => setFilter(f)}
+                >
+                  {f === "All" ? "All" : STATUS[f as AppointmentStatus].label}
+                </button>
+              ))}
             </div>
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search pet or owner..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+            {/* Search */}
+            <div className="apt-search">
+              <Search size={13} />
+              <input
+                placeholder="Search patient or pet..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Client / Pet</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAppointments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      No appointments found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredAppointments.map((app) => (
-                    <TableRow key={app.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium flex items-center gap-2">
-                            <CalendarIcon className="h-3 w-3" />
-                            {new Date(app.startTime).toLocaleDateString("fr-FR", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(app.startTime).toLocaleTimeString("fr-FR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
+        </div>
+
+        {/* Table */}
+        <div style={{ overflowX: "auto" }}>
+          <table className="apt-table">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Client / Pet</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Actions</th>
+                <th style={{ width: 40 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>
+                    <div className="empty-state">
+                      <div className="empty-icon"><CalendarIcon size={20} /></div>
+                      <div className="empty-title">No appointments found</div>
+                      <div className="empty-sub">Try changing your search or filter.</div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((apt) => (
+                  <>
+                    <tr key={apt.id} className={expanded === apt.id ? "expanded" : ""}>
+                      {/* Date */}
+                      <td>
+                        <div className="cell-date">
+                          {new Date(apt.startTime).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium flex items-center gap-2 text-sm">
-                            <UserIcon className="h-3 w-3" />
-                            {app.client.firstName} {app.client.lastName}
-                          </span>
-                          {app.pet && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Dog className="h-3 w-3" />
-                              {app.pet.name} ({app.pet.species})
-                            </span>
-                          )}
+                        <div className="cell-time">
+                          <Clock size={11} />
+                          {new Date(apt.startTime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                          {" – "}
+                          {new Date(apt.endTime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                         </div>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-sm">
-                        {app.reason}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={statusConfig[app.status].variant}
-                          className={`${statusConfig[app.status].color} border`}
-                        >
-                          {statusConfig[app.status].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {app.status === "PENDING" && (
+                      </td>
+
+                      {/* Client */}
+                      <td>
+                        <div className="cell-client" style={{ display: "flex", alignItems: "center" }}>
+                          <UserIcon size={12} style={{ marginRight: 5, color: "#94a3b8" }} />
+                          {apt.client.firstName} {apt.client.lastName}
+                          {apt.isEmergency && <span className="emg-tag">🚨 Urgent</span>}
+                        </div>
+                        {apt.pet && (
+                          <div className="cell-pet">
+                            <Dog size={11} />
+                            {apt.pet.name} · {apt.pet.species}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Reason */}
+                      <td style={{ maxWidth: 180 }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {apt.reason}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <span className={`apt-badge ${STATUS[apt.status].cls}`}>
+                          {STATUS[apt.status].label}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {apt.status === "PENDING" && (
                             <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleConfirm(app.id)}
+                              <button
+                                className="action-btn btn-confirm"
+                                onClick={() => handleConfirm(apt.id)}
                                 disabled={isPending}
-                                className="text-green-600 border-green-200 hover:bg-green-50"
                               >
-                                <CheckCircle2 className="mr-1 h-4 w-4" />
-                                Confirm
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCancel(app.id)}
+                                <CheckCircle2 size={12} /> Confirm
+                              </button>
+                              <button
+                                className="action-btn btn-cancel"
+                                onClick={() => handleCancel(apt.id)}
                                 disabled={isPending}
-                                className="text-red-600 border-red-200 hover:bg-red-50"
                               >
-                                <XCircle className="mr-1 h-4 w-4" />
-                                Cancel
-                              </Button>
+                                <XCircle size={12} /> Cancel
+                              </button>
                             </>
                           )}
+                          {apt.status === "CONFIRMED" && (
+                            <button
+                              className="action-btn btn-cancel"
+                              onClick={() => handleCancel(apt.id)}
+                              disabled={isPending}
+                            >
+                              <XCircle size={12} /> Cancel
+                            </button>
+                          )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+                      </td>
+
+                      {/* Expand */}
+                      <td>
+                        {apt.notes && (
+                          <button
+                            className={`expand-btn ${expanded === apt.id ? "open" : ""}`}
+                            onClick={() => setExpanded(expanded === apt.id ? null : apt.id)}
+                          >
+                            <ChevronDown size={15} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Expanded notes row */}
+                    {expanded === apt.id && apt.notes && (
+                      <tr key={`${apt.id}-notes`} className="notes-row">
+                        <td colSpan={6}>
+                          <div className="notes-inner">
+                            <div className="notes-label">Clinical notes</div>
+                            {apt.notes}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  )
 }

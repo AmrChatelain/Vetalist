@@ -1,98 +1,174 @@
-"use server";
+"use server"
 
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth"
+import prisma from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
-/**
- * Confirms a pending appointment.
- * Ensures the user is a VET and owns the vet profile associated with the appointment.
- */
+async function getVetProfile() {
+  const session = await auth()
+  if (!session?.user?.id) return null
+  return prisma.vetProfile.findUnique({ where: { userId: session.user.id } })
+}
+
+// ─── Appointments ────────────────────────────────────────────────────────────
+
 export async function confirmAppointment(appointmentId: string) {
-  const session = await auth();
-
-  if (!session || session.user.role !== "VET") {
-    throw new Error("Unauthorized: Only veterinarians can manage appointments.");
-  }
-
   try {
-    // 1. Find the appointment and verify it belongs to this vet
-    const appointment = await prisma.appointment.findUnique({
-      where: { id: appointmentId },
-      include: { vet: true },
-    });
+    const vet = await getVetProfile()
+    if (!vet) return { success: false, error: "Unauthorized" }
 
-    if (!appointment) throw new Error("Appointment not found.");
-    if (appointment.vetId !== session.user.id && session.user.role !== "ADMIN") {
-       // Note: In a real scenario, we'd match against the VetProfile ID or ensure 
-       // the session user ID maps correctly to the vet profile. 
-       // Given our schema, appointment.vetId links to VetProfile.id.
-       // We need to make sure the session user is linked to that VetProfile.
-    }
-
-    // Verification: Does this user own the VetProfile associated with this appointment?
-    const vetProfile = await prisma.vetProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!vetProfile || appointment.vetId !== vetProfile.id) {
-      throw new Error("Unauthorized: You do not manage this appointment.");
-    }
-
-    // 2. Update status
     await prisma.appointment.update({
-      where: { id: appointmentId },
+      where: { id: appointmentId, vetId: vet.id },
       data: { status: "CONFIRMED" },
-    });
+    })
 
-    revalidatePath("/vet/appointments");
-    return { success: true };
-  } catch (error) {
-    console.error("Error confirming appointment:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to confirm appointment" };
+    revalidatePath("/dashboard/vet")
+    revalidatePath("/dashboard/vet/appointments")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
 }
 
-/**
- * Cancels an appointment.
- * Allows the vet to provide a reason for cancellation.
- */
-export async function cancelAppointment(appointmentId: string, reason?: string) {
-  const session = await auth();
-
-  if (!session || session.user.role !== "VET") {
-    throw new Error("Unauthorized.");
-  }
-
+export async function cancelAppointment(appointmentId: string, reason: string) {
   try {
-    const vetProfile = await prisma.vetProfile.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!vetProfile) throw new Error("Vet profile not found.");
-
-    const appointment = await prisma.appointment.findUnique({
-      where: { id: appointmentId },
-    });
-
-    if (!appointment || appointment.vetId !== vetProfile.id) {
-      throw new Error("Unauthorized or appointment not found.");
-    }
+    const vet = await getVetProfile()
+    if (!vet) return { success: false, error: "Unauthorized" }
 
     await prisma.appointment.update({
-      where: { id: appointmentId },
-      data: { 
+      where: { id: appointmentId, vetId: vet.id },
+      data: {
         status: "CANCELLED",
-        cancellationReason: reason || "Cancelled by veterinarian",
+        cancellationReason: reason,
         cancelledAt: new Date(),
-        cancelledBy: "VET"
+        cancelledBy: "VET",
       },
-    });
+    })
 
-    revalidatePath("/vet/appointments");
-    return { success: true };
-  } catch (error) {
-    console.error("Error cancelling appointment:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to cancel appointment" };
+    revalidatePath("/dashboard/vet")
+    revalidatePath("/dashboard/vet/appointments")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+// ─── Toggles ─────────────────────────────────────────────────────────────────
+
+export async function toggleAcceptingPatients(value: boolean) {
+  try {
+    const vet = await getVetProfile()
+    if (!vet) return { success: false, error: "Unauthorized" }
+
+    await prisma.vetProfile.update({
+      where: { id: vet.id },
+      data: { isActive: value },
+    })
+
+    revalidatePath("/dashboard/vet")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function toggleAcceptingEmergencies(value: boolean) {
+  try {
+    const vet = await getVetProfile()
+    if (!vet) return { success: false, error: "Unauthorized" }
+
+    await prisma.vetProfile.update({
+      where: { id: vet.id },
+      data: { acceptsEmergencies: value },
+    })
+
+    revalidatePath("/dashboard/vet")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+// ─── Working Hours ────────────────────────────────────────────────────────────
+
+export type WorkingHourInput = {
+  dayOfWeek: number // 0 = Sunday, 6 = Saturday
+  startTime: string // "09:00"
+  endTime: string   // "18:00"
+}
+
+export async function saveWorkingHours(hours: WorkingHourInput[]) {
+  try {
+    const vet = await getVetProfile()
+    if (!vet) return { success: false, error: "Unauthorized" }
+
+    // Replace all working hours in one transaction
+    await prisma.$transaction([
+      prisma.workingHour.deleteMany({ where: { vetProfileId: vet.id } }),
+      prisma.workingHour.createMany({
+        data: hours.map((h) => ({ ...h, vetProfileId: vet.id })),
+      }),
+    ])
+
+    revalidatePath("/dashboard/vet")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+// ─── Dashboard Stats ──────────────────────────────────────────────────────────
+
+export async function getVetDashboardData() {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
+  const vet = await prisma.vetProfile.findUnique({
+    where: { userId: session.user.id },
+    include: {
+      workingHours: true,
+      appointments: {
+        include: {
+          client: { select: { firstName: true, lastName: true } },
+          pet:    { select: { name: true, species: true } },
+        },
+        orderBy: { startTime: "asc" },
+      },
+    },
+  })
+
+  if (!vet) return null
+
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const todayEnd   = new Date(todayStart.getTime() + 86400000)
+  const weekEnd    = new Date(todayStart.getTime() + 7 * 86400000)
+
+  const todayAppointments = vet.appointments.filter(
+    (a) => a.startTime >= todayStart && a.startTime < todayEnd
+  )
+  const upcomingWeek = vet.appointments.filter(
+    (a) => a.startTime >= now && a.startTime < weekEnd && a.status !== "CANCELLED"
+  )
+  const pending = vet.appointments.filter((a) => a.status === "PENDING")
+  const upcoming = vet.appointments.filter(
+    (a) => a.startTime >= now && a.status !== "CANCELLED" && a.status !== "DONE"
+  )
+  const past = vet.appointments.filter(
+    (a) => a.startTime < now || a.status === "DONE" || a.status === "CANCELLED"
+  )
+
+  return {
+    vet,
+    stats: {
+      todayCount:    todayAppointments.length,
+      pendingCount:  pending.length,
+      weekCount:     upcomingWeek.length,
+      isActive:      vet.isActive,
+      acceptsEmergencies: (vet as any).acceptsEmergencies ?? true,
+    },
+    upcomingAppointments: upcoming,
+    pastAppointments:     past,
+    workingHours:         vet.workingHours,
   }
 }
