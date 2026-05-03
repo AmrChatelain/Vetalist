@@ -1,23 +1,23 @@
 "use server"
 
 import { auth } from "@/lib/auth"
-import prisma from "@/lib/db"
+import db from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
 async function getVetProfile() {
   const session = await auth()
   if (!session?.user?.id) return null
-  return prisma.vetProfile.findUnique({ where: { userId: session.user.id } })
+  return db.vetProfile.findUnique({ where: { userId: session.user.id } })
 }
 
-// ─── Appointments ────────────────────────────────────────────────────────────
+// ─── Appointments ─────────────────────────────────────────────────────────────
 
 export async function confirmAppointment(appointmentId: string) {
   try {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    await prisma.appointment.update({
+    await db.appointment.update({
       where: { id: appointmentId, vetId: vet.id },
       data: { status: "CONFIRMED" },
     })
@@ -35,7 +35,7 @@ export async function cancelAppointment(appointmentId: string, reason: string) {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    await prisma.appointment.update({
+    await db.appointment.update({
       where: { id: appointmentId, vetId: vet.id },
       data: {
         status: "CANCELLED",
@@ -53,14 +53,14 @@ export async function cancelAppointment(appointmentId: string, reason: string) {
   }
 }
 
-// ─── Toggles ─────────────────────────────────────────────────────────────────
+// ─── Toggles ──────────────────────────────────────────────────────────────────
 
 export async function toggleAcceptingPatients(value: boolean) {
   try {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    await prisma.vetProfile.update({
+    await db.vetProfile.update({
       where: { id: vet.id },
       data: { isActive: value },
     })
@@ -77,7 +77,7 @@ export async function toggleAcceptingEmergencies(value: boolean) {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    await prisma.vetProfile.update({
+    await db.vetProfile.update({
       where: { id: vet.id },
       data: { acceptsEmergencies: value },
     })
@@ -89,12 +89,12 @@ export async function toggleAcceptingEmergencies(value: boolean) {
   }
 }
 
-// ─── Working Hours ────────────────────────────────────────────────────────────
+// ─── Working Hours ─────────────────────────────────────────────────────────────
 
 export type WorkingHourInput = {
-  dayOfWeek: number // 0 = Sunday, 6 = Saturday
-  startTime: string // "09:00"
-  endTime: string   // "18:00"
+  dayOfWeek: number
+  startTime: string
+  endTime: string
 }
 
 export async function saveWorkingHours(hours: WorkingHourInput[]) {
@@ -102,10 +102,9 @@ export async function saveWorkingHours(hours: WorkingHourInput[]) {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    // Replace all working hours in one transaction
-    await prisma.$transaction([
-      prisma.workingHour.deleteMany({ where: { vetProfileId: vet.id } }),
-      prisma.workingHour.createMany({
+    await db.$transaction([
+      db.workingHour.deleteMany({ where: { vetProfileId: vet.id } }),
+      db.workingHour.createMany({
         data: hours.map((h) => ({ ...h, vetProfileId: vet.id })),
       }),
     ])
@@ -117,15 +116,24 @@ export async function saveWorkingHours(hours: WorkingHourInput[]) {
   }
 }
 
-// ─── Dashboard Stats ──────────────────────────────────────────────────────────
+// ─── Dashboard Data ───────────────────────────────────────────────────────────
 
 export async function getVetDashboardData() {
   const session = await auth()
   if (!session?.user?.id) return null
 
-  const vet = await prisma.vetProfile.findUnique({
+  const vet = await db.vetProfile.findUnique({
     where: { userId: session.user.id },
     include: {
+      // ✅ FIX: include user so vet.user.firstName works in the dashboard greeting
+      user: {
+        select: {
+          firstName: true,
+          lastName:  true,
+          email:     true,
+          image:     true,
+        },
+      },
       workingHours: true,
       appointments: {
         include: {
@@ -139,10 +147,10 @@ export async function getVetDashboardData() {
 
   if (!vet) return null
 
-  const now = new Date()
+  const now        = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const todayEnd   = new Date(todayStart.getTime() + 86400000)
-  const weekEnd    = new Date(todayStart.getTime() + 7 * 86400000)
+  const todayEnd   = new Date(todayStart.getTime() + 86_400_000)
+  const weekEnd    = new Date(todayStart.getTime() + 7 * 86_400_000)
 
   const todayAppointments = vet.appointments.filter(
     (a) => a.startTime >= todayStart && a.startTime < todayEnd
@@ -161,14 +169,67 @@ export async function getVetDashboardData() {
   return {
     vet,
     stats: {
-      todayCount:    todayAppointments.length,
-      pendingCount:  pending.length,
-      weekCount:     upcomingWeek.length,
-      isActive:      vet.isActive,
+      todayCount:         todayAppointments.length,
+      pendingCount:       pending.length,
+      weekCount:          upcomingWeek.length,
+      isActive:           vet.isActive,
       acceptsEmergencies: (vet as any).acceptsEmergencies ?? true,
     },
     upcomingAppointments: upcoming,
     pastAppointments:     past,
     workingHours:         vet.workingHours,
+  }
+}
+
+// ─── Admin: get all pending vets ──────────────────────────────────────────────
+
+export async function getPendingVets() {
+  const session = await auth()
+  if (!session?.user || session.user.role !== "ADMIN") return []
+
+  return db.vetProfile.findMany({
+    where: { status: "PENDING_APPROVAL" },
+    include: {
+      user: { select: { firstName: true, lastName: true, email: true } },
+    },
+    orderBy: { user: { firstName: "asc" } },
+  })
+}
+
+export async function approveVet(vetProfileId: string) {
+  try {
+    const session = await auth()
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    await db.vetProfile.update({
+      where: { id: vetProfileId },
+      data: { status: "ACTIVE", isVerified: true },
+    })
+
+    revalidatePath("/dashboard/admin")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function rejectVet(vetProfileId: string, reason: string) {
+  try {
+    const session = await auth()
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    await db.vetProfile.update({
+      where: { id: vetProfileId },
+      data: { status: "REJECTED", rejectionReason: reason },
+    })
+
+    revalidatePath("/dashboard/admin")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
 }

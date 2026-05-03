@@ -42,6 +42,7 @@ model VetProfile {
   lng                Float?
   street             String
   zipCode            String
+  licenseNumber      String?
   paymentMethods     String[]
   rejectionReason    String?
   status             VetStatus           @default(PENDING_ONBOARDING)

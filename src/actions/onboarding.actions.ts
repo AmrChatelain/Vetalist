@@ -11,13 +11,21 @@ export async function updateVetOnboarding(data: OnboardingInput) {
   try {
     const session = await auth()
     if (!session?.user?.id) return { success: false, error: "Unauthorized" }
+    if (session.user.role !== "VET") return { success: false, error: "Not a vet account" }
 
     const validated = onboardingSchema.parse(data)
 
     await db.vetProfile.upsert({
       where: { userId: session.user.id },
-      update: { ...validated, status: "PENDING_APPROVAL" },
-      create: { userId: session.user.id, ...validated, status: "PENDING_APPROVAL" },
+      update: {
+        ...validated,
+        status: "PENDING_APPROVAL",
+      },
+      create: {
+        userId: session.user.id,
+        ...validated,
+        status: "PENDING_APPROVAL",
+      },
     })
 
     revalidatePath("/dashboard/vet")

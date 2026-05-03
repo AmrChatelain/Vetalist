@@ -15,6 +15,7 @@ export const onboardingSchema = z.object({
   bio:             z.string().min(20, "Bio must be at least 20 characters"),
   specialties:     commaStringToArray,
   languagesSpoken: commaStringToArray,
+  licenseNumber:   z.string().min(4, "License number is required"),
   clinicName:      z.string().min(2, "Clinic name is required"),
   clinicPhone:     z.string().min(6, "Valid phone number required"),
   city:            z.string().min(2, "City is required"),

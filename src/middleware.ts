@@ -1,85 +1,94 @@
-import NextAuth from "next-auth";
-import { authConfig } from "@/lib/auth.config";
+import NextAuth from "next-auth"
+import { authConfig } from "@/lib/auth.config"
 
-// Use the edge-safe authConfig here — no Prisma, no bcrypt.
-// The JWT token already contains role and vetStatus from the sign-in flow in auth.ts.
-const { auth } = NextAuth(authConfig);
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const { nextUrl } = req;
-  const user      = req.auth?.user;
-  const role      = user?.role      as string | undefined;
-  const vetStatus = user?.vetStatus as string | undefined;
+  const isLoggedIn = !!req.auth
+  const { nextUrl } = req
+  const user      = req.auth?.user
+  const role      = user?.role      as string | undefined
+  const vetStatus = user?.vetStatus as string | undefined
 
-  const path = nextUrl.pathname;
+  const path = nextUrl.pathname
 
   const isAuthRoute =
     path.startsWith("/login") ||
     path.startsWith("/register") ||
     path.startsWith("/forgot-password") ||
-    path.startsWith("/reset-password");
+    path.startsWith("/reset-password")
 
-  const isOnboardingRoute   = path.startsWith("/onboarding");
-  const isDashboardRoute    = path.startsWith("/dashboard");
-  const isGenericDashboard  = path === "/dashboard";
+  const isOnboardingRoute     = path.startsWith("/onboarding")
+  const isPendingApprovalRoute = path.startsWith("/pending-approval")
+  const isDashboardRoute      = path.startsWith("/dashboard")
+  const isGenericDashboard    = path === "/dashboard"
 
-  // ─── UNAUTHENTICATED ────────────────────────────────────────────────────
+  // ─── UNAUTHENTICATED ──────────────────────────────────────────────────────
   if (!isLoggedIn) {
-    if (isDashboardRoute || isOnboardingRoute) {
-      return Response.redirect(new URL("/login", nextUrl));
+    if (isDashboardRoute || isOnboardingRoute || isPendingApprovalRoute) {
+      return Response.redirect(new URL("/login", nextUrl))
     }
-    return undefined; // allow
+    return undefined
   }
 
-  // ─── AUTHENTICATED ──────────────────────────────────────────────────────
+  // ─── AUTHENTICATED ────────────────────────────────────────────────────────
 
-  // /dashboard with no suffix → route to correct dashboard by role
+  // /dashboard → route by role
   if (isGenericDashboard) {
-    if (role === "ADMIN")  return Response.redirect(new URL("/dashboard/admin",  nextUrl));
-    if (role === "VET")    return Response.redirect(new URL("/dashboard/vet",    nextUrl));
-    return Response.redirect(new URL("/dashboard/client", nextUrl));
+    if (role === "ADMIN")  return Response.redirect(new URL("/dashboard/admin",  nextUrl))
+    if (role === "VET")    return Response.redirect(new URL("/dashboard/vet",    nextUrl))
+    return Response.redirect(new URL("/dashboard/client", nextUrl))
   }
 
-  // Authenticated users visiting login/register → send to their dashboard
+  // Authenticated users on auth pages → redirect to dashboard
   if (isAuthRoute) {
-    if (role === "ADMIN")  return Response.redirect(new URL("/dashboard/admin",  nextUrl));
-    if (role === "VET")    return Response.redirect(new URL("/dashboard/vet",    nextUrl));
-    return Response.redirect(new URL("/dashboard/client", nextUrl));
+    if (role === "ADMIN")  return Response.redirect(new URL("/dashboard/admin",  nextUrl))
+    if (role === "VET")    return Response.redirect(new URL("/dashboard/vet",    nextUrl))
+    return Response.redirect(new URL("/dashboard/client", nextUrl))
   }
 
-  // ─── VET ────────────────────────────────────────────────────────────────
+  // ─── VET RULES ────────────────────────────────────────────────────────────
   if (role === "VET") {
-    // Incomplete onboarding → force to /onboarding
+    // Must complete onboarding first
     if (vetStatus === "PENDING_ONBOARDING" && !isOnboardingRoute) {
-      return Response.redirect(new URL("/onboarding", nextUrl));
+      return Response.redirect(new URL("/onboarding", nextUrl))
     }
-    // Awaiting admin approval → block dashboard
-    if (vetStatus === "PENDING_APPROVAL" && isDashboardRoute) {
-      return Response.redirect(new URL("/", nextUrl));
+
+    // Submitted but awaiting approval → hold on pending page
+    if (vetStatus === "PENDING_APPROVAL" && !isPendingApprovalRoute && !isOnboardingRoute) {
+      return Response.redirect(new URL("/pending-approval", nextUrl))
     }
-    // Block vets from client and admin dashboards
+
+    // Rejected → force back to onboarding to resubmit, or let them see pending page
+    if (vetStatus === "REJECTED" && !isPendingApprovalRoute && !isOnboardingRoute) {
+      return Response.redirect(new URL("/pending-approval", nextUrl))
+    }
+
+    // Block vets from client/admin dashboards
     if (path.startsWith("/dashboard/client") || path.startsWith("/dashboard/admin")) {
-      return Response.redirect(new URL("/dashboard/vet", nextUrl));
+      return Response.redirect(new URL("/dashboard/vet", nextUrl))
     }
   }
 
-  // ─── CLIENT ─────────────────────────────────────────────────────────────
+  // ─── CLIENT RULES ─────────────────────────────────────────────────────────
   if (role === "CLIENT") {
-    // Block clients from vet and admin dashboards
     if (path.startsWith("/dashboard/vet") || path.startsWith("/dashboard/admin")) {
-      return Response.redirect(new URL("/dashboard/client", nextUrl));
+      return Response.redirect(new URL("/dashboard/client", nextUrl))
+    }
+    // Clients shouldn't access vet-only pages
+    if (isOnboardingRoute || isPendingApprovalRoute) {
+      return Response.redirect(new URL("/dashboard/client", nextUrl))
     }
   }
 
-  // ─── ADMIN ──────────────────────────────────────────────────────────────
+  // ─── ADMIN RULES ──────────────────────────────────────────────────────────
   // Admins can access everything
 
-  return undefined; // allow
-});
+  return undefined
+})
 
 export const config = {
   matcher: [
     "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|site.webmanifest).*)",
   ],
-};
+}
