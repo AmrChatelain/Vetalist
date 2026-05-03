@@ -1,24 +1,11 @@
 "use server"
 
 import { auth } from "@/lib/auth"
-import prisma from "@/lib/db"
+import db from "@/lib/db"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
+import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding"
 
-export const onboardingSchema = z.object({
-  bio:             z.string().min(20, "Bio must be at least 20 characters"),
-  specialties:     z.array(z.string().min(1)).min(1, "At least one specialty required"),
-  languagesSpoken: z.array(z.string().min(1)).min(1, "At least one language required"),
-  clinicName:      z.string().min(2,  "Clinic name is required"),
-  clinicPhone:     z.string().min(6,  "Valid phone number required"),
-  city:            z.string().min(2,  "City is required"),
-  street:          z.string().min(5,  "Street address is required"),
-  zipCode:         z.string().min(3,  "Zip code is required"),
-  careTypes:       z.array(z.string().min(1)).min(1, "At least one care type required"),
-  paymentMethods:  z.array(z.string().min(1)).min(1, "At least one payment method required"),
-})
-
-export type OnboardingInput = z.infer<typeof onboardingSchema>
+export type { OnboardingInput }
 
 export async function updateVetOnboarding(data: OnboardingInput) {
   try {
@@ -27,7 +14,7 @@ export async function updateVetOnboarding(data: OnboardingInput) {
 
     const validated = onboardingSchema.parse(data)
 
-    await prisma.vetProfile.upsert({
+    await db.vetProfile.upsert({
       where: { userId: session.user.id },
       update: { ...validated, status: "PENDING_APPROVAL" },
       create: { userId: session.user.id, ...validated, status: "PENDING_APPROVAL" },
