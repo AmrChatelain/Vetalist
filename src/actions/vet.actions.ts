@@ -3,11 +3,53 @@
 import { auth } from "@/lib/auth"
 import db from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { sendEmail } from "@/lib/email"
+import {
+  confirmationEmail,
+  cancellationEmail,
+  vetApprovedEmail,
+  vetRejectedEmail,
+  type AppointmentEmailData,
+} from "@/emails/templates"
 
 async function getVetProfile() {
   const session = await auth()
   if (!session?.user?.id) return null
   return db.vetProfile.findUnique({ where: { userId: session.user.id } })
+}
+
+// ─── Build email data from appointment ───────────────────────────────────────
+
+async function buildAppointmentEmailData(appointmentId: string): Promise<AppointmentEmailData | null> {
+  const apt = await db.appointment.findUnique({
+    where: { id: appointmentId },
+    include: {
+      client:  { select: { firstName: true, lastName: true, email: true } },
+      pet:     { select: { name: true } },
+      vet: {
+        include: {
+          user: { select: { firstName: true, lastName: true } },
+        },
+      },
+    },
+  })
+
+  if (!apt) return null
+
+  return {
+    clientFirstName: apt.client.firstName,
+    vetName:         `${apt.vet.user.firstName} ${apt.vet.user.lastName}`,
+    clinicName:      apt.vet.clinicName ?? "Vetalist Clinic",
+    address:         `${apt.vet.street}, ${apt.vet.zipCode} ${apt.vet.city}`,
+    date: new Date(apt.startTime).toLocaleDateString("en-GB", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric",
+    }),
+    time: new Date(apt.startTime).toLocaleTimeString("fr-FR", {
+      hour: "2-digit", minute: "2-digit",
+    }),
+    petName: apt.pet?.name ?? null,
+    reason:  apt.reason,
+  }
 }
 
 // ─── Appointments ─────────────────────────────────────────────────────────────
@@ -17,15 +59,35 @@ export async function confirmAppointment(appointmentId: string) {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    await db.appointment.update({
+    const apt = await db.appointment.update({
       where: { id: appointmentId, vetId: vet.id },
-      data: { status: "CONFIRMED" },
+      data:  { status: "CONFIRMED" },
+      include: {
+        client: { select: { email: true, firstName: true } },
+      },
     })
+
+    // Log the email
+    await db.emailLog.create({
+      data: {
+        appointmentId,
+        recipientEmail: apt.client.email,
+        emailType:      "CONFIRMATION",
+      },
+    })
+
+    // Send confirmation email to client
+    const emailData = await buildAppointmentEmailData(appointmentId)
+    if (emailData) {
+      const { subject, html } = confirmationEmail(emailData)
+      await sendEmail({ to: apt.client.email, subject, html })
+    }
 
     revalidatePath("/dashboard/vet")
     revalidatePath("/dashboard/vet/appointments")
     return { success: true }
   } catch (e: any) {
+    console.error("confirmAppointment error:", e)
     return { success: false, error: e.message }
   }
 }
@@ -35,20 +97,40 @@ export async function cancelAppointment(appointmentId: string, reason: string) {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
 
-    await db.appointment.update({
+    const apt = await db.appointment.update({
       where: { id: appointmentId, vetId: vet.id },
       data: {
-        status: "CANCELLED",
+        status:             "CANCELLED",
         cancellationReason: reason,
-        cancelledAt: new Date(),
-        cancelledBy: "VET",
+        cancelledAt:        new Date(),
+        cancelledBy:        "VET",
+      },
+      include: {
+        client: { select: { email: true, firstName: true } },
       },
     })
+
+    // Log the email
+    await db.emailLog.create({
+      data: {
+        appointmentId,
+        recipientEmail: apt.client.email,
+        emailType:      "CANCELLATION",
+      },
+    })
+
+    // Send cancellation email with vet's reason
+    const emailData = await buildAppointmentEmailData(appointmentId)
+    if (emailData) {
+      const { subject, html } = cancellationEmail(emailData, "VET", reason)
+      await sendEmail({ to: apt.client.email, subject, html })
+    }
 
     revalidatePath("/dashboard/vet")
     revalidatePath("/dashboard/vet/appointments")
     return { success: true }
   } catch (e: any) {
+    console.error("cancelAppointment error:", e)
     return { success: false, error: e.message }
   }
 }
@@ -59,12 +141,7 @@ export async function toggleAcceptingPatients(value: boolean) {
   try {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
-
-    await db.vetProfile.update({
-      where: { id: vet.id },
-      data: { isActive: value },
-    })
-
+    await db.vetProfile.update({ where: { id: vet.id }, data: { isActive: value } })
     revalidatePath("/dashboard/vet")
     return { success: true }
   } catch (e: any) {
@@ -76,12 +153,7 @@ export async function toggleAcceptingEmergencies(value: boolean) {
   try {
     const vet = await getVetProfile()
     if (!vet) return { success: false, error: "Unauthorized" }
-
-    await db.vetProfile.update({
-      where: { id: vet.id },
-      data: { acceptsEmergencies: value },
-    })
-
+    await db.vetProfile.update({ where: { id: vet.id }, data: { acceptsEmergencies: value } })
     revalidatePath("/dashboard/vet")
     return { success: true }
   } catch (e: any) {
@@ -94,7 +166,7 @@ export async function toggleAcceptingEmergencies(value: boolean) {
 export type WorkingHourInput = {
   dayOfWeek: number
   startTime: string
-  endTime: string
+  endTime:   string
 }
 
 export async function saveWorkingHours(hours: WorkingHourInput[]) {
@@ -109,14 +181,14 @@ export async function saveWorkingHours(hours: WorkingHourInput[]) {
       }),
     ])
 
-    revalidatePath("/dashboard/vet")
+    revalidatePath("/dashboard/vet/settings")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
 }
 
-// ─── Dashboard Data ───────────────────────────────────────────────────────────
+// ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 export async function getVetDashboardData() {
   const session = await auth()
@@ -125,14 +197,8 @@ export async function getVetDashboardData() {
   const vet = await db.vetProfile.findUnique({
     where: { userId: session.user.id },
     include: {
-      // ✅ FIX: include user so vet.user.firstName works in the dashboard greeting
       user: {
-        select: {
-          firstName: true,
-          lastName:  true,
-          email:     true,
-          image:     true,
-        },
+        select: { firstName: true, lastName: true, email: true, image: true },
       },
       workingHours: true,
       appointments: {
@@ -158,7 +224,7 @@ export async function getVetDashboardData() {
   const upcomingWeek = vet.appointments.filter(
     (a) => a.startTime >= now && a.startTime < weekEnd && a.status !== "CANCELLED"
   )
-  const pending = vet.appointments.filter((a) => a.status === "PENDING")
+  const pending  = vet.appointments.filter((a) => a.status === "PENDING")
   const upcoming = vet.appointments.filter(
     (a) => a.startTime >= now && a.status !== "CANCELLED" && a.status !== "DONE"
   )
@@ -181,20 +247,20 @@ export async function getVetDashboardData() {
   }
 }
 
-// ─── Admin: get all pending vets ──────────────────────────────────────────────
+// ─── Admin: get pending vets ───────────────────────────────────────────────────
 
 export async function getPendingVets() {
   const session = await auth()
   if (!session?.user || session.user.role !== "ADMIN") return []
 
   return db.vetProfile.findMany({
-    where: { status: "PENDING_APPROVAL" },
-    include: {
-      user: { select: { firstName: true, lastName: true, email: true } },
-    },
+    where:   { status: "PENDING_APPROVAL" },
+    include: { user: { select: { firstName: true, lastName: true, email: true } } },
     orderBy: { user: { firstName: "asc" } },
   })
 }
+
+// ─── Admin: approve vet ───────────────────────────────────────────────────────
 
 export async function approveVet(vetProfileId: string) {
   try {
@@ -203,10 +269,17 @@ export async function approveVet(vetProfileId: string) {
       return { success: false, error: "Unauthorized" }
     }
 
-    await db.vetProfile.update({
+    const vet = await db.vetProfile.update({
       where: { id: vetProfileId },
-      data: { status: "ACTIVE", isVerified: true },
+      data:  { status: "ACTIVE", isVerified: false }, // isVerified starts false — admin grants badge separately
+      include: {
+        user: { select: { email: true, firstName: true } },
+      },
     })
+
+    // Send approval email to vet
+    const { subject, html } = vetApprovedEmail(vet.user.firstName)
+    await sendEmail({ to: vet.user.email, subject, html })
 
     revalidatePath("/dashboard/admin")
     return { success: true }
@@ -215,6 +288,8 @@ export async function approveVet(vetProfileId: string) {
   }
 }
 
+// ─── Admin: reject vet ────────────────────────────────────────────────────────
+
 export async function rejectVet(vetProfileId: string, reason: string) {
   try {
     const session = await auth()
@@ -222,10 +297,17 @@ export async function rejectVet(vetProfileId: string, reason: string) {
       return { success: false, error: "Unauthorized" }
     }
 
-    await db.vetProfile.update({
+    const vet = await db.vetProfile.update({
       where: { id: vetProfileId },
-      data: { status: "REJECTED", rejectionReason: reason },
+      data:  { status: "REJECTED", rejectionReason: reason },
+      include: {
+        user: { select: { email: true, firstName: true } },
+      },
     })
+
+    // Send rejection email with reason
+    const { subject, html } = vetRejectedEmail(vet.user.firstName, reason)
+    await sendEmail({ to: vet.user.email, subject, html })
 
     revalidatePath("/dashboard/admin")
     return { success: true }

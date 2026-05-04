@@ -5,14 +5,22 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding"
-import { updateVetOnboarding } from "@/actions/onboarding.actions"
+import { updateVetOnboarding, updateVetProfile } from "@/actions/onboarding.actions"
 import { toast } from "sonner"
-import { Save, ArrowRight, ArrowLeft, CheckCircle2, Stethoscope } from "lucide-react"
+import { Save, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 
 const STEPS = [
-  { id: 1, title: "Professional Profile", desc: "Your background & expertise"    },
-  { id: 2, title: "Clinic Details",       desc: "Location & contact info"        },
-  { id: 3, title: "Practice Settings",    desc: "Services & payment options"     },
+  { id: 1, title: "Professional Profile", desc: "Your background & expertise"   },
+  { id: 2, title: "License & Credentials", desc: "Verify your medical license"  },
+  { id: 3, title: "Clinic Details",        desc: "Location & contact info"      },
+  { id: 4, title: "Practice Settings",     desc: "Services & payment options"   },
 ]
 
 function arrToStr(arr: string[] | string): string {
@@ -22,9 +30,12 @@ function arrToStr(arr: string[] | string): string {
 
 interface ProfileEditorProps {
   defaultValues?: Partial<OnboardingInput>
+  // isUpdate=true → uses updateVetProfile which never resets status
+  // isUpdate=false (default) → uses updateVetOnboarding for first-time onboarding
+  isUpdate?: boolean
 }
 
-export default function ProfileEditor({ defaultValues }: ProfileEditorProps) {
+export default function ProfileEditor({ defaultValues, isUpdate = false }: ProfileEditorProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -41,6 +52,7 @@ export default function ProfileEditor({ defaultValues }: ProfileEditorProps) {
       bio:             defaultValues?.bio             ?? "",
       specialties:     defaultValues?.specialties     ?? ([] as any),
       languagesSpoken: defaultValues?.languagesSpoken ?? ([] as any),
+      licenseNumber:   defaultValues?.licenseNumber   ?? "",
       clinicName:      defaultValues?.clinicName      ?? "",
       clinicPhone:     defaultValues?.clinicPhone     ?? "",
       city:            defaultValues?.city            ?? "",
@@ -54,8 +66,9 @@ export default function ProfileEditor({ defaultValues }: ProfileEditorProps) {
   const nextStep = async () => {
     const fieldsMap: Record<number, (keyof OnboardingInput)[]> = {
       1: ["bio", "specialties", "languagesSpoken"],
-      2: ["clinicName", "clinicPhone", "city", "street", "zipCode"],
-      3: ["careTypes", "paymentMethods"],
+      2: ["licenseNumber"],
+      3: ["clinicName", "clinicPhone", "city", "street", "zipCode"],
+      4: ["careTypes", "paymentMethods"],
     }
     const isValid = await trigger(fieldsMap[currentStep] as any)
     if (isValid) setCurrentStep((s) => s + 1)
@@ -64,468 +77,309 @@ export default function ProfileEditor({ defaultValues }: ProfileEditorProps) {
 
   const onSubmit = async (data: OnboardingInput) => {
     setIsSubmitting(true)
-    const result = await updateVetOnboarding(data)
+
+    // Use the correct action based on whether this is an update or first-time onboarding
+    const action = isUpdate ? updateVetProfile : updateVetOnboarding
+    const result = await action(data)
     setIsSubmitting(false)
 
     if (result.success) {
-      toast.success("Profile saved successfully!")
+      toast.success(isUpdate ? "Profile updated successfully!" : "Profile submitted for review!")
       router.refresh()
-      router.push("/dashboard/vet")
+      if (!isUpdate) router.push("/pending-approval")
     } else {
       toast.error(`Error: ${result.error}`)
     }
   }
 
-  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100
-
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
-
-        .pe-root {
-          min-height: 100vh;
-          background: #f0f4f8;
-          background-image:
-            radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.07) 0%, transparent 60%),
-            radial-gradient(ellipse at 80% 20%, rgba(99,102,241,0.05) 0%, transparent 50%);
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          padding: 3rem 1rem;
-          font-family: 'DM Sans', sans-serif;
-        }
-
-        .pe-inner {
-          width: 100%;
-          max-width: 680px;
-        }
-
-        /* Page header */
-        .pe-page-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 2rem;
-        }
-
-        .pe-page-icon {
-          width: 44px; height: 44px;
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          border-radius: 12px;
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 14px rgba(59,130,246,0.3);
-          flex-shrink: 0;
-        }
-
-        .pe-page-title {
-          font-family: 'Sora', sans-serif;
-          font-size: 1.4rem;
-          font-weight: 700;
-          color: #0f172a;
-          letter-spacing: -0.03em;
-        }
-
-        .pe-page-sub {
-          font-size: 0.8rem;
-          color: #64748b;
-          margin-top: 2px;
-        }
-
-        /* Steps */
-        .pe-steps {
-          display: flex;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          padding: 14px 20px;
-        }
-
-        .pe-step-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-        }
-
-        .pe-step-item:last-child { flex: 0; }
-
-        .pe-dot {
-          width: 32px; height: 32px;
-          border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 0.75rem; font-weight: 700;
-          flex-shrink: 0;
-          border: 2px solid #e2e8f0;
-          background: white;
-          color: #94a3b8;
-          transition: all 0.3s;
-          font-family: 'Sora', sans-serif;
-        }
-
-        .pe-dot.done    { background: #eff6ff; border-color: #3b82f6; color: #3b82f6; }
-        .pe-dot.current { background: #1d4ed8; border-color: #1d4ed8; color: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-
-        .pe-step-text { }
-        .pe-step-name { font-size: 0.75rem; font-weight: 600; color: #94a3b8; line-height: 1.2; }
-        .pe-step-name.active { color: #1e293b; }
-        .pe-step-desc { font-size: 0.65rem; color: #cbd5e1; }
-
-        .pe-connector {
-          flex: 1;
-          height: 2px;
-          background: #f1f5f9;
-          margin: 0 10px;
-          border-radius: 2px;
-          transition: background 0.3s;
-        }
-
-        .pe-connector.done { background: #3b82f6; }
-
-        /* Card */
-        .pe-card {
-          background: white;
-          border-radius: 16px;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.05);
-          overflow: hidden;
-        }
-
-        /* Progress bar */
-        .pe-progress { height: 3px; background: #f1f5f9; }
-        .pe-progress-fill {
-          height: 100%;
-          background: linear-gradient(to right, #3b82f6, #6366f1);
-          transition: width 0.4s ease;
-        }
-
-        .pe-card-head {
-          padding: 22px 28px 18px;
-          border-bottom: 1px solid #f1f5f9;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .pe-card-title {
-          font-family: 'Sora', sans-serif;
-          font-size: 1rem;
-          font-weight: 600;
-          color: #0f172a;
-        }
-
-        .pe-card-desc { font-size: 0.78rem; color: #94a3b8; margin-top: 3px; }
-
-        .pe-step-badge {
-          font-size: 0.68rem;
-          font-weight: 700;
-          color: #3b82f6;
-          background: #eff6ff;
-          border: 1px solid #dbeafe;
-          border-radius: 20px;
-          padding: 3px 10px;
-          flex-shrink: 0;
-        }
-
-        .pe-card-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
-
-        /* Fields */
-        .pe-field { display: flex; flex-direction: column; gap: 5px; }
-
-        .pe-label {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-        }
-
-        .pe-input, .pe-textarea {
-          padding: 10px 14px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-          font-size: 0.875rem;
-          color: #1e293b;
-          font-family: 'DM Sans', sans-serif;
-          background: #fafafa;
-          outline: none;
-          transition: all 0.2s;
-          width: 100%;
-        }
-
-        .pe-input:focus, .pe-textarea:focus {
-          border-color: #93c5fd;
-          background: white;
-          box-shadow: 0 0 0 3px rgba(147,197,253,0.18);
-        }
-
-        .pe-input.err, .pe-textarea.err { border-color: #fca5a5; background: #fff5f5; }
-        .pe-textarea { min-height: 110px; resize: vertical; }
-        .pe-hint { font-size: 0.68rem; color: #94a3b8; }
-        .pe-error { font-size: 0.7rem; color: #dc2626; }
-
-        .pe-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .pe-grid32 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
-
-        /* Footer */
-        .pe-footer {
-          padding: 16px 28px;
-          border-top: 1px solid #f1f5f9;
-          background: #fafafa;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .pe-step-count { font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
-
-        .pe-btns { display: flex; gap: 8px; }
-
-        .pe-btn-ghost {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 9px 16px; border-radius: 8px;
-          font-size: 0.8rem; font-weight: 600;
-          cursor: pointer; border: 1px solid #e2e8f0;
-          background: white; color: #64748b;
-          transition: all 0.15s; font-family: 'DM Sans', sans-serif;
-        }
-
-        .pe-btn-ghost:hover { background: #f8fafc; color: #1e293b; }
-
-        .pe-btn-primary {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 9px 20px; border-radius: 8px;
-          font-size: 0.8rem; font-weight: 600;
-          cursor: pointer; border: none;
-          background: #1d4ed8; color: white;
-          transition: all 0.15s; font-family: 'DM Sans', sans-serif;
-        }
-
-        .pe-btn-primary:hover:not(:disabled) { background: #1e40af; }
-        .pe-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-      `}</style>
-
-      <div className="pe-root">
-        <div className="pe-inner">
-
-          {/* Page header */}
-          <div className="pe-page-header">
-            <div className="pe-page-icon">
-              <Stethoscope size={20} color="white" />
+    <div className="space-y-6">
+      {/* Step indicator */}
+      <div className="flex items-center">
+        {STEPS.map((step, i) => (
+          <React.Fragment key={step.id}>
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all shrink-0
+                ${currentStep > step.id
+                  ? "bg-blue-50 border-blue-500 text-blue-600"
+                  : currentStep === step.id
+                    ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
+                    : "bg-white border-slate-200 text-slate-400"}`}
+              >
+                {currentStep > step.id ? <CheckCircle2 size={13} /> : step.id}
+              </div>
+              <span className={`text-xs font-semibold hidden sm:block ${
+                currentStep >= step.id ? "text-slate-800" : "text-slate-400"
+              }`}>
+                {step.title}
+              </span>
             </div>
-            <div>
-              <div className="pe-page-title">Professional Profile</div>
-              <div className="pe-page-sub">Keep your profile up to date so clients can find and trust you.</div>
-            </div>
-          </div>
-
-          {/* Step indicators */}
-          <div className="pe-steps">
-            {STEPS.map((step, i) => (
-              <React.Fragment key={step.id}>
-                <div className="pe-step-item">
-                  <div className={`pe-dot ${currentStep > step.id ? "done" : currentStep === step.id ? "current" : ""}`}>
-                    {currentStep > step.id ? <CheckCircle2 size={13} /> : step.id}
-                  </div>
-                  <div className="pe-step-text">
-                    <div className={`pe-step-name ${currentStep >= step.id ? "active" : ""}`}>{step.title}</div>
-                    <div className="pe-step-desc">{step.desc}</div>
-                  </div>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`pe-connector ${currentStep > step.id ? "done" : ""}`} />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Form card */}
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="pe-card">
-
-              {/* Progress bar */}
-              <div className="pe-progress">
-                <div className="pe-progress-fill" style={{ width: `${progress}%` }} />
-              </div>
-
-              {/* Card header */}
-              <div className="pe-card-head">
-                <div>
-                  <div className="pe-card-title">{STEPS[currentStep - 1].title}</div>
-                  <div className="pe-card-desc">{STEPS[currentStep - 1].desc}</div>
-                </div>
-                <span className="pe-step-badge">Step {currentStep} / {STEPS.length}</span>
-              </div>
-
-              {/* Card body */}
-              <div className="pe-card-body">
-
-                {/* STEP 1 */}
-                {currentStep === 1 && (
-                  <>
-                    <div className="pe-field">
-                      <label className="pe-label">Professional Bio</label>
-                      <textarea
-                        className={`pe-textarea ${errors.bio ? "err" : ""}`}
-                        {...register("bio")}
-                        placeholder="Describe your expertise, years of experience, and approach to animal care..."
-                      />
-                      {errors.bio
-                        ? <span className="pe-error">{errors.bio.message}</span>
-                        : <span className="pe-hint">Min. 20 characters — clients see this on your public profile.</span>}
-                    </div>
-
-                    <div className="pe-field">
-                      <label className="pe-label">Specialties</label>
-                      <input
-                        className={`pe-input ${errors.specialties ? "err" : ""}`}
-                        {...register("specialties")}
-                        placeholder="Surgery, Dental, Cardiology, Oncology"
-                        defaultValue={defaultValues?.specialties ? arrToStr(defaultValues.specialties) : ""}
-                      />
-                      {errors.specialties
-                        ? <span className="pe-error">{errors.specialties.message as string}</span>
-                        : <span className="pe-hint">Separate each specialty with a comma.</span>}
-                    </div>
-
-                    <div className="pe-field">
-                      <label className="pe-label">Languages Spoken</label>
-                      <input
-                        className={`pe-input ${errors.languagesSpoken ? "err" : ""}`}
-                        {...register("languagesSpoken")}
-                        placeholder="English, French, Arabic"
-                        defaultValue={defaultValues?.languagesSpoken ? arrToStr(defaultValues.languagesSpoken) : ""}
-                      />
-                      {errors.languagesSpoken
-                        ? <span className="pe-error">{errors.languagesSpoken.message as string}</span>
-                        : <span className="pe-hint">Separate each language with a comma.</span>}
-                    </div>
-                  </>
-                )}
-
-                {/* STEP 2 */}
-                {currentStep === 2 && (
-                  <>
-                    <div className="pe-grid2">
-                      <div className="pe-field">
-                        <label className="pe-label">Clinic Name</label>
-                        <input
-                          className={`pe-input ${errors.clinicName ? "err" : ""}`}
-                          {...register("clinicName")}
-                          placeholder="Lilas Veterinary Clinic"
-                        />
-                        {errors.clinicName && <span className="pe-error">{errors.clinicName.message}</span>}
-                      </div>
-                      <div className="pe-field">
-                        <label className="pe-label">Clinic Phone</label>
-                        <input
-                          className={`pe-input ${errors.clinicPhone ? "err" : ""}`}
-                          {...register("clinicPhone")}
-                          placeholder="+33 1 23 45 67 89"
-                        />
-                        {errors.clinicPhone && <span className="pe-error">{errors.clinicPhone.message}</span>}
-                      </div>
-                    </div>
-
-                    <div className="pe-grid32">
-                      <div className="pe-field">
-                        <label className="pe-label">Street Address</label>
-                        <input
-                          className={`pe-input ${errors.street ? "err" : ""}`}
-                          {...register("street")}
-                          placeholder="123 Rue de Rivoli"
-                        />
-                        {errors.street && <span className="pe-error">{errors.street.message}</span>}
-                      </div>
-                      <div className="pe-field">
-                        <label className="pe-label">Zip Code</label>
-                        <input
-                          className={`pe-input ${errors.zipCode ? "err" : ""}`}
-                          {...register("zipCode")}
-                          placeholder="75011"
-                        />
-                        {errors.zipCode && <span className="pe-error">{errors.zipCode.message}</span>}
-                      </div>
-                    </div>
-
-                    <div className="pe-field" style={{ maxWidth: 280 }}>
-                      <label className="pe-label">City</label>
-                      <input
-                        className={`pe-input ${errors.city ? "err" : ""}`}
-                        {...register("city")}
-                        placeholder="Paris"
-                      />
-                      {errors.city && <span className="pe-error">{errors.city.message}</span>}
-                    </div>
-                  </>
-                )}
-
-                {/* STEP 3 */}
-                {currentStep === 3 && (
-                  <>
-                    <div className="pe-field">
-                      <label className="pe-label">Care Types Offered</label>
-                      <input
-                        className={`pe-input ${errors.careTypes ? "err" : ""}`}
-                        {...register("careTypes")}
-                        placeholder="General consultation, Urgent care, Surgery, Vaccination"
-                        defaultValue={defaultValues?.careTypes ? arrToStr(defaultValues.careTypes) : ""}
-                      />
-                      {errors.careTypes
-                        ? <span className="pe-error">{errors.careTypes.message as string}</span>
-                        : <span className="pe-hint">Separate each type with a comma.</span>}
-                    </div>
-
-                    <div className="pe-field">
-                      <label className="pe-label">Payment Methods</label>
-                      <input
-                        className={`pe-input ${errors.paymentMethods ? "err" : ""}`}
-                        {...register("paymentMethods")}
-                        placeholder="Cash, Visa, Mastercard, Bank transfer"
-                        defaultValue={defaultValues?.paymentMethods ? arrToStr(defaultValues.paymentMethods) : ""}
-                      />
-                      {errors.paymentMethods
-                        ? <span className="pe-error">{errors.paymentMethods.message as string}</span>
-                        : <span className="pe-hint">Separate each method with a comma.</span>}
-                    </div>
-                  </>
-                )}
-
-              </div>
-
-              {/* Footer */}
-              <div className="pe-footer">
-                <span className="pe-step-count">Step {currentStep} of {STEPS.length}</span>
-                <div className="pe-btns">
-                  {currentStep > 1 && (
-                    <button
-                      type="button"
-                      className="pe-btn-ghost"
-                      onClick={() => setCurrentStep((s) => s - 1)}
-                    >
-                      <ArrowLeft size={13} /> Back
-                    </button>
-                  )}
-                  {currentStep < STEPS.length ? (
-                    <button type="button" className="pe-btn-primary" onClick={nextStep}>
-                      Next <ArrowRight size={13} />
-                    </button>
-                  ) : (
-                    <button type="submit" className="pe-btn-primary" disabled={isSubmitting}>
-                      <Save size={13} />
-                      {isSubmitting ? "Saving..." : "Save profile"}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-            </div>
-          </form>
-
-        </div>
+            {i < STEPS.length - 1 && (
+              <div className={`flex-1 h-0.5 mx-3 rounded transition-all ${
+                currentStep > step.id ? "bg-blue-500" : "bg-slate-200"
+              }`} />
+            )}
+          </React.Fragment>
+        ))}
       </div>
-    </>
+
+      {/* Form card */}
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Card className="border-slate-200 shadow-sm overflow-hidden">
+          {/* Progress bar */}
+          <div className="h-1 bg-slate-100">
+            <div
+              className="h-full bg-linear-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+              style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+            />
+          </div>
+
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">{STEPS[currentStep - 1].title}</CardTitle>
+                <CardDescription className="mt-0.5">{STEPS[currentStep - 1].desc}</CardDescription>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                Step {currentStep} / {STEPS.length}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <Separator />
+
+          <CardContent className="pt-6 space-y-4">
+
+            {/* STEP 1: Professional */}
+            {currentStep === 1 && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="bio" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Professional Bio
+                  </Label>
+                  <Textarea
+                    id="bio"
+                    {...register("bio")}
+                    placeholder="Describe your expertise, years of experience, and approach to animal care..."
+                    className={`min-h-27.5 ${errors.bio ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                  />
+                  {errors.bio
+                    ? <p className="text-xs text-red-500">{errors.bio.message}</p>
+                    : <p className="text-xs text-slate-400">Min. 20 characters — shown on your public profile.</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="specialties" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Specialties
+                  </Label>
+                  <Input
+                    id="specialties"
+                    {...register("specialties")}
+                    placeholder="Surgery, Dental, Cardiology, Oncology"
+                    defaultValue={defaultValues?.specialties ? arrToStr(defaultValues.specialties) : ""}
+                    className={errors.specialties ? "border-red-300 focus-visible:ring-red-200" : ""}
+                  />
+                  {errors.specialties
+                    ? <p className="text-xs text-red-500">{errors.specialties.message as string}</p>
+                    : <p className="text-xs text-slate-400">Separate each specialty with a comma.</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="languagesSpoken" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Languages Spoken
+                  </Label>
+                  <Input
+                    id="languagesSpoken"
+                    {...register("languagesSpoken")}
+                    placeholder="English, French, Arabic"
+                    defaultValue={defaultValues?.languagesSpoken ? arrToStr(defaultValues.languagesSpoken) : ""}
+                    className={errors.languagesSpoken ? "border-red-300 focus-visible:ring-red-200" : ""}
+                  />
+                  {errors.languagesSpoken
+                    ? <p className="text-xs text-red-500">{errors.languagesSpoken.message as string}</p>
+                    : <p className="text-xs text-slate-400">Separate each language with a comma.</p>}
+                </div>
+              </>
+            )}
+
+            {/* STEP 2: License */}
+            {currentStep === 2 && (
+              <>
+                <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 size={15} className="text-blue-600" />
+                  </div>
+                  <div className="text-sm text-blue-800">
+                    <strong className="block mb-1">Why we need this</strong>
+                    Your license number is reviewed by our admin team and never shown publicly.
+                    We verify it against official registries before approving your profile.
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="licenseNumber" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Veterinary License Number
+                  </Label>
+                  <Input
+                    id="licenseNumber"
+                    {...register("licenseNumber")}
+                    placeholder="e.g. VET-FR-123456"
+                    className={`font-mono ${errors.licenseNumber ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                  />
+                  {errors.licenseNumber
+                    ? <p className="text-xs text-red-500">{errors.licenseNumber.message}</p>
+                    : <p className="text-xs text-slate-400">
+                        Issued by your national authority (e.g. Ordre National des Vétérinaires in France).
+                      </p>}
+                </div>
+              </>
+            )}
+
+            {/* STEP 3: Clinic */}
+            {currentStep === 3 && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="clinicName" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Clinic Name
+                    </Label>
+                    <Input
+                      id="clinicName"
+                      {...register("clinicName")}
+                      placeholder="Clinique Vétérinaire Lilas"
+                      className={errors.clinicName ? "border-red-300" : ""}
+                    />
+                    {errors.clinicName && <p className="text-xs text-red-500">{errors.clinicName.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="clinicPhone" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Clinic Phone
+                    </Label>
+                    <Input
+                      id="clinicPhone"
+                      {...register("clinicPhone")}
+                      placeholder="+33 1 23 45 67 89"
+                      className={errors.clinicPhone ? "border-red-300" : ""}
+                    />
+                    {errors.clinicPhone && <p className="text-xs text-red-500">{errors.clinicPhone.message}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label htmlFor="street" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Street Address
+                    </Label>
+                    <Input
+                      id="street"
+                      {...register("street")}
+                      placeholder="123 Rue de Rivoli"
+                      className={errors.street ? "border-red-300" : ""}
+                    />
+                    {errors.street && <p className="text-xs text-red-500">{errors.street.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="zipCode" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Zip Code
+                    </Label>
+                    <Input
+                      id="zipCode"
+                      {...register("zipCode")}
+                      placeholder="75011"
+                      className={errors.zipCode ? "border-red-300" : ""}
+                    />
+                    {errors.zipCode && <p className="text-xs text-red-500">{errors.zipCode.message}</p>}
+                  </div>
+                </div>
+
+                <div className="max-w-[200px] space-y-1.5">
+                  <Label htmlFor="city" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    City
+                  </Label>
+                  <Input
+                    id="city"
+                    {...register("city")}
+                    placeholder="Paris"
+                    className={errors.city ? "border-red-300" : ""}
+                  />
+                  {errors.city && <p className="text-xs text-red-500">{errors.city.message}</p>}
+                </div>
+              </>
+            )}
+
+            {/* STEP 4: Practice */}
+            {currentStep === 4 && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="careTypes" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Care Types Offered
+                  </Label>
+                  <Input
+                    id="careTypes"
+                    {...register("careTypes")}
+                    placeholder="Consultation générale, Urgences, Chirurgie, Vaccination"
+                    defaultValue={defaultValues?.careTypes ? arrToStr(defaultValues.careTypes) : ""}
+                    className={errors.careTypes ? "border-red-300" : ""}
+                  />
+                  {errors.careTypes
+                    ? <p className="text-xs text-red-500">{errors.careTypes.message as string}</p>
+                    : <p className="text-xs text-slate-400">Separate each type with a comma.</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="paymentMethods" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Payment Methods
+                  </Label>
+                  <Input
+                    id="paymentMethods"
+                    {...register("paymentMethods")}
+                    placeholder="Espèces, Visa, Mastercard, Virement"
+                    defaultValue={defaultValues?.paymentMethods ? arrToStr(defaultValues.paymentMethods) : ""}
+                    className={errors.paymentMethods ? "border-red-300" : ""}
+                  />
+                  {errors.paymentMethods
+                    ? <p className="text-xs text-red-500">{errors.paymentMethods.message as string}</p>
+                    : <p className="text-xs text-slate-400">Separate each method with a comma.</p>}
+                </div>
+              </>
+            )}
+
+          </CardContent>
+
+          <Separator />
+
+          <CardFooter className="flex items-center justify-between bg-slate-50 py-4">
+            <span className="text-xs text-slate-400">Step {currentStep} of {STEPS.length}</span>
+            <div className="flex gap-2">
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentStep((s) => s - 1)}
+                  className="gap-1.5"
+                >
+                  <ArrowLeft size={13} /> Back
+                </Button>
+              )}
+              {currentStep < STEPS.length ? (
+                <Button type="button" size="sm" onClick={nextStep} className="gap-1.5">
+                  Next <ArrowRight size={13} />
+                </Button>
+              ) : (
+                <Button type="submit" size="sm" disabled={isSubmitting} className="gap-1.5">
+                  <Save size={13} />
+                  {isSubmitting
+                    ? "Saving..."
+                    : isUpdate
+                      ? "Save changes"
+                      : "Submit for review"}
+                </Button>
+              )}
+            </div>
+          </CardFooter>
+        </Card>
+      </form>
+    </div>
   )
 }
