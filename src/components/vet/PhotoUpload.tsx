@@ -2,12 +2,28 @@
 
 import { useState, useTransition, useRef } from "react"
 import { updateVetPhoto } from "@/actions/onboarding.actions"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from '@supabase/supabase-js'
 import { toast } from "sonner"
 import { Camera, Upload, X, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import Image from "next/image"
+
+const BUCKET = "vetalist-public"
+
+// Extract the storage path from a full Supabase public URL
+// e.g. "https://xxx.supabase.co/storage/v1/object/public/vetalist-public/vet-photos/abc.jpg"
+// → "vet-photos/abc.jpg"
+function extractStoragePath(url: string): string | null {
+  try {
+    const marker = `/object/public/${BUCKET}/`
+    const idx = url.indexOf(marker)
+    if (idx === -1) return null
+    return url.slice(idx + marker.length)
+  } catch {
+    return null
+  }
+}
 
 interface PhotoUploadProps {
   currentPhotoUrl: string | null
@@ -25,13 +41,12 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file")
+      toast.error("Veuillez sélectionner une image.")
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB")
+      toast.error("L'image doit faire moins de 5 Mo.")
       return
     }
 
@@ -40,23 +55,35 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
     reader.onload = (ev) => setPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
 
-    // Upload to Supabase Storage
     setUploading(true)
     try {
-      const supabase  = createClient()
-      const ext       = file.name.split(".").pop()
-      const path      = `vet-photos/${vetId}-${Date.now()}.${ext}`
+      const supabase = createClient()
+
+      // ✅ FIX: Delete old file from storage before uploading new one
+      if (photoUrl) {
+        const oldPath = extractStoragePath(photoUrl)
+        if (oldPath) {
+          const { error: deleteError } = await supabase.storage
+            .from(BUCKET)
+            .remove([oldPath])
+          if (deleteError) {
+            // Non-fatal — log and continue
+            console.warn("Could not delete old photo:", deleteError.message)
+          }
+        }
+      }
+
+      // Upload new file
+      const ext  = file.name.split(".").pop()
+      const path = `vet-photos/${vetId}-${Date.now()}.${ext}`
 
       const { error: uploadError } = await supabase.storage
-        .from("vetalist-public")
+        .from(BUCKET)
         .upload(path, file, { upsert: true })
 
       if (uploadError) throw uploadError
 
-      const { data } = supabase.storage
-        .from("vetalist-public")
-        .getPublicUrl(path)
-
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
       const publicUrl = data.publicUrl
 
       // Save URL to DB
@@ -65,13 +92,14 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
         if (res.success) {
           setPhotoUrl(publicUrl)
           setPreview(null)
-          toast.success("Profile photo updated")
+          toast.success("Photo de profil mise à jour")
         } else {
-          toast.error(res.error ?? "Failed to save photo")
+          toast.error(res.error ?? "Impossible de sauvegarder la photo.")
+          setPreview(null)
         }
       })
     } catch (err: any) {
-      toast.error(err.message ?? "Upload failed")
+      toast.error(err.message ?? "Échec du téléchargement.")
       setPreview(null)
     } finally {
       setUploading(false)
@@ -81,12 +109,21 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
 
   function handleRemove() {
     startTransition(async () => {
+      // Delete from storage
+      if (photoUrl) {
+        const supabase = createClient()
+        const oldPath  = extractStoragePath(photoUrl)
+        if (oldPath) {
+          await supabase.storage.from(BUCKET).remove([oldPath])
+        }
+      }
+
       const res = await updateVetPhoto("")
       if (res.success) {
         setPhotoUrl(null)
-        toast.success("Photo removed")
+        toast.success("Photo supprimée")
       } else {
-        toast.error(res.error ?? "Failed to remove")
+        toast.error(res.error ?? "Impossible de supprimer la photo.")
       }
     })
   }
@@ -99,21 +136,21 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Camera size={15} className="text-blue-500" />
-          Profile Photo
+          Photo de profil
         </CardTitle>
         <CardDescription>
-          This photo appears on your public profile. Use a professional headshot.
+          Cette photo apparaît sur votre profil public. Utilisez une photo professionnelle.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-6">
-          {/* Photo preview */}
-          <div className="relative shrink-0">
+          {/* Preview */}
+          <div className="relative flex-shrink-0">
             <div className="w-24 h-24 rounded-full border-2 border-slate-200 overflow-hidden bg-slate-100 flex items-center justify-center">
               {displayPhoto ? (
                 <Image
                   src={displayPhoto}
-                  alt="Profile photo"
+                  alt="Photo de profil"
                   width={96}
                   height={96}
                   className="w-full h-full object-cover"
@@ -146,7 +183,7 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
               disabled={isLoading}
             >
               <Upload size={13} />
-              {photoUrl ? "Change photo" : "Upload photo"}
+              {photoUrl ? "Changer la photo" : "Télécharger une photo"}
             </Button>
             {photoUrl && (
               <Button
@@ -157,11 +194,11 @@ export function PhotoUpload({ currentPhotoUrl, vetId }: PhotoUploadProps) {
                 disabled={isLoading}
               >
                 <X size={13} />
-                Remove photo
+                Supprimer la photo
               </Button>
             )}
             <p className="text-xs text-slate-400 text-center">
-              JPG, PNG or WebP — max 5MB
+              JPG, PNG ou WebP — 5 Mo max
             </p>
           </div>
         </div>

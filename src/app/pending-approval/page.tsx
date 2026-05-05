@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import db from "@/lib/db"
-import { Clock, CheckCircle2, XCircle, Stethoscope, Mail } from "lucide-react"
+import { Clock,  XCircle, Stethoscope, Mail } from "lucide-react"
 
 export default async function PendingApprovalPage() {
   const session = await auth()
@@ -13,10 +13,7 @@ export default async function PendingApprovalPage() {
     select: { status: true, rejectionReason: true, licenseNumber: true, clinicName: true },
   })
 
-  // If no profile yet, send back to onboarding
   if (!vet) redirect("/onboarding")
-
-  // If approved, send to dashboard
   if (vet.status === "ACTIVE") redirect("/dashboard/vet")
 
   const isRejected = vet.status === "REJECTED"
@@ -181,12 +178,12 @@ export default async function PendingApprovalPage() {
 
           {/* Title */}
           <div className="pa-title">
-            {isRejected ? "Application Not Approved" : "Application Under Review"}
+            {isRejected ? "Candidature non approuvée" : "Candidature en cours d'examen"}
           </div>
           <div className="pa-subtitle">
             {isRejected
-              ? "Unfortunately your application was not approved this time. Please review the reason below and resubmit."
-              : "Thank you for completing your profile. Our team is reviewing your credentials — this usually takes 1–2 business days."}
+              ? "Votre candidature n'a malheureusement pas été retenue cette fois. Veuillez consulter le motif ci-dessous et soumettre à nouveau."
+              : "Merci d'avoir complété votre profil. Notre équipe examine vos informations — cela prend généralement 1 à 2 jours ouvrés."}
           </div>
 
           <div className="pa-divider" />
@@ -195,17 +192,17 @@ export default async function PendingApprovalPage() {
           {vet.clinicName && (
             <div className="pa-info-grid">
               <div className="pa-info-row">
-                <span className="pa-info-label">Clinic</span>
+                <span className="pa-info-label">Clinique</span>
                 <span className="pa-info-value">{vet.clinicName}</span>
               </div>
               <div className="pa-info-row">
-                <span className="pa-info-label">License</span>
+                <span className="pa-info-label">Licence</span>
                 <span className="pa-info-value" style={{ fontFamily: "monospace" }}>{vet.licenseNumber}</span>
               </div>
               <div className="pa-info-row">
-                <span className="pa-info-label">Status</span>
+                <span className="pa-info-label">Statut</span>
                 <span className="pa-info-value" style={{ color: isRejected ? "#dc2626" : "#d97706", fontWeight: 600 }}>
-                  {isRejected ? "❌ Rejected" : "⏳ Pending review"}
+                  {isRejected ? "❌ Rejeté" : "⏳ En attente d'examen"}
                 </span>
               </div>
             </div>
@@ -215,7 +212,7 @@ export default async function PendingApprovalPage() {
           {isRejected && vet.rejectionReason && (
             <div className="pa-rejection-box">
               <div className="pa-rejection-title">
-                <XCircle size={13} /> Reason for rejection
+                <XCircle size={13} /> Motif du rejet
               </div>
               <div className="pa-rejection-text">{vet.rejectionReason}</div>
             </div>
@@ -227,28 +224,28 @@ export default async function PendingApprovalPage() {
               <div className="pa-divider" />
               <div style={{ textAlign: "left", marginBottom: 10 }}>
                 <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-                  What happens next
+                  Prochaines étapes
                 </div>
                 <div className="pa-steps">
                   <div className="pa-step">
                     <div className="pa-step-num">1</div>
                     <div className="pa-step-text">
-                      <strong>License verification</strong>
-                      Our team checks your license number against official registries.
+                      <strong>Vérification de la licence</strong>
+                      Notre équipe vérifie votre numéro de licence auprès des registres officiels.
                     </div>
                   </div>
                   <div className="pa-step">
                     <div className="pa-step-num">2</div>
                     <div className="pa-step-text">
-                      <strong>Profile review</strong>
-                      We review your clinic details and practice information.
+                      <strong>Examen du profil</strong>
+                      Nous vérifions les informations de votre clinique et de votre activité.
                     </div>
                   </div>
                   <div className="pa-step">
                     <div className="pa-step-num">3</div>
                     <div className="pa-step-text">
-                      <strong>You go live</strong>
-                      Once approved, you'll receive an email and can start accepting bookings.
+                      <strong>Mise en ligne</strong>
+                      Une fois approuvé, vous recevrez un e-mail et pourrez commencer à accepter des réservations.
                     </div>
                   </div>
                 </div>
@@ -260,7 +257,7 @@ export default async function PendingApprovalPage() {
           {isRejected && (
             <div style={{ textAlign: "center" }}>
               <a href="/onboarding" className="pa-resubmit-btn">
-                Update & resubmit
+                Mettre à jour et soumettre à nouveau
               </a>
             </div>
           )}
@@ -268,7 +265,7 @@ export default async function PendingApprovalPage() {
           {/* Contact */}
           <div className="pa-contact">
             <Mail size={13} />
-            Questions? <a href="mailto:support@vetalist.com">support@vetalist.com</a>
+            Des questions ? <a href="mailto:support@vetalist.com">support@vetalist.com</a>
           </div>
 
         </div>
