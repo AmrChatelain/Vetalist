@@ -7,7 +7,7 @@ import db from "@/lib/db"
 import { Loader2, SearchX } from "lucide-react"
 
 interface SearchPageProps {
-  searchParams: {
+  searchParams: Promise<{
     q?:         string
     city?:      string
     specialty?: string
@@ -15,10 +15,11 @@ interface SearchPageProps {
     emergency?: string
     available?: string
     payment?:   string
-  }
+  }>
 }
 
 async function SearchResults({ searchParams }: SearchPageProps) {
+  const params = await searchParams
   const {
     q         = "",
     city      = "",
@@ -27,18 +28,14 @@ async function SearchResults({ searchParams }: SearchPageProps) {
     emergency,
     available,
     payment   = "",
-  } = searchParams
+  } = params
 
-  // Build where clause
-  const where: any = {
-    status:   "ACTIVE",
-    isActive: true,
-  }
+  const where: any = { status: "ACTIVE", isActive: true }
 
   if (emergency === "true") where.acceptsEmergencies = true
-  if (city)     where.city              = { contains: city,     mode: "insensitive" }
-  if (language) where.languagesSpoken   = { has: language }
-  if (payment)  where.paymentMethods    = { has: payment }
+  if (city)     where.city            = { contains: city,    mode: "insensitive" }
+  if (language) where.languagesSpoken = { has: language }
+  if (payment)  where.paymentMethods  = { has: payment }
 
   if (specialty) {
     where.OR = [
@@ -72,10 +69,8 @@ async function SearchResults({ searchParams }: SearchPageProps) {
     take: 50,
   })
 
-  // Get next available slots for all vets
   const nextSlots = await getNextSlotsForVets(vets.map((v) => v.id))
 
-  // Apply availability filter after getting slots
   const now      = new Date()
   const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
   const weekEnd  = new Date(now.getTime() + 7 * 86_400_000)
@@ -91,7 +86,6 @@ async function SearchResults({ searchParams }: SearchPageProps) {
     results = results.filter((v) => v.nextSlot && v.nextSlot <= weekEnd)
   }
 
-  // Sort: soonest next slot first
   results.sort((a, b) => {
     if (a.nextSlot && b.nextSlot) return a.nextSlot.getTime() - b.nextSlot.getTime()
     if (a.nextSlot && !b.nextSlot) return -1
@@ -115,6 +109,7 @@ async function SearchResults({ searchParams }: SearchPageProps) {
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-slate-500">{results.length} vétérinaire{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}</p>
       {results.map((vet) => (
         <VetCard
           key={vet.id}
@@ -138,13 +133,13 @@ async function SearchResults({ searchParams }: SearchPageProps) {
   )
 }
 
-export default function SearchPage({ searchParams }: SearchPageProps) {
-  const q         = searchParams.q         ?? ""
-  const city      = searchParams.city      ?? ""
-  const specialty = searchParams.specialty ?? ""
-  const emergency = searchParams.emergency
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const params = await searchParams
+  const q         = params.q         ?? ""
+  const city      = params.city      ?? ""
+  const specialty = params.specialty ?? ""
+  const emergency = params.emergency
 
-  // Build a readable summary of the search
   const searchSummary = [
     q         && `"${q}"`,
     city      && `à ${city}`,
@@ -154,7 +149,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Top search bar */}
+      {/* Sticky search bar */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-40 py-4 px-4 sm:px-6 shadow-sm">
         <div className="max-w-6xl mx-auto">
           <SearchBar
@@ -166,7 +161,6 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {/* Result header */}
         <div className="mb-6">
           <h1 className="text-xl font-bold text-slate-900 font-['Sora']">
             {searchSummary

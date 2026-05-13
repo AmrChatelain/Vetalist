@@ -1,46 +1,48 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { PawPrint, Menu, X } from "lucide-react"
-import { SearchBar } from "@/components/search/SearchBar"
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { PawPrint, Menu, X } from "lucide-react";
+import { SearchBar } from "@/components/search/SearchBar";
 
 export function Navbar() {
-  const router = useRouter()
-  const [isScrolled, setIsScrolled]           = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const router = useRouter();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) setIsMobileMenuOpen(false)
-    }
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+      if (window.innerWidth >= 768) setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [isMobileMenuOpen])
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
 
   function handleSearch(params: Record<string, string>) {
-    const sp = new URLSearchParams(params)
-    router.push(`/search?${sp.toString()}`)
-    setIsMobileMenuOpen(false)
+    const sp = new URLSearchParams(params);
+    router.push(`/search?${sp.toString()}`);
+    setIsMobileMenuOpen(false);
   }
 
   const navLinks = [
     { href: "/search", label: "Trouver un vétérinaire" },
     { href: "/#how-it-works", label: "Comment ça marche" },
-  ]
+  ];
 
   return (
     <nav
@@ -52,10 +54,9 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center gap-4">
-
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-rose-400 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-violet-400 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <PawPrint className="text-white w-5 h-5" />
             </div>
             <span className="font-['Playfair_Display'] text-2xl font-semibold text-[#1e1a2e] hidden sm:block">
@@ -152,7 +153,10 @@ export function Navbar() {
                 asChild
                 className="w-full justify-center bg-gradient-to-r from-[#a78bfa] to-[#c4b5fd] text-white rounded-full"
               >
-                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
                   Commencer
                 </Link>
               </Button>
@@ -161,5 +165,5 @@ export function Navbar() {
         </div>
       )}
     </nav>
-  )
+  );
 }

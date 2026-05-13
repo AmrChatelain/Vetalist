@@ -95,8 +95,6 @@ export const PAYMENT_METHODS = [
   "Carte bancaire (Visa / Mastercard)",
   "Chèque",
   "Virement bancaire",
-  "Apple Pay",
-  "Google Pay",
   "Mutuelle animale",
   "Paiement en plusieurs fois",
 ] as const

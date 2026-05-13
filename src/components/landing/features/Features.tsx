@@ -14,29 +14,29 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    title: "Verified Professionals",
-    description: "Every veterinarian on our platform undergoes rigorous credential verification so you can book with complete confidence.",
+    title: "Professionnels vérifiés",
+    description: "Chaque vétérinaire sur notre plateforme fait l'objet d'une vérification rigoureuse de ses diplômes, pour réserver en toute confiance.",
     Icon: ShieldCheck,
     colorClass: "bg-emerald-50 border-emerald-100",
     iconColorClass: "text-emerald-600",
   },
   {
-    title: "Instant Booking",
-    description: "Skip the phone calls and long wait times. Book an appointment with your preferred vet in just a few taps.",
+    title: "Réservation instantanée",
+    description: "Fini les appels téléphoniques et les longues attentes. Prenez rendez-vous avec le vétérinaire de votre choix en quelques clics.",
     Icon: CalendarCheck,
     colorClass: "bg-amber-50 border-amber-100",
     iconColorClass: "text-amber-600",
   },
   {
-    title: "Smart Reminders",
-    description: "Never miss an important check-up. Receive automated reminders via email and SMS before every appointment.",
+    title: "Rappels intelligents",
+    description: "Ne manquez plus aucun contrôle important. Recevez des rappels automatiques par e-mail et SMS avant chaque rendez-vous.",
     Icon: BellRing,
     colorClass: "bg-blue-50 border-blue-100",
     iconColorClass: "text-blue-600",
   },
   {
-    title: "Trusted Profiles",
-    description: "Browse detailed specialties, experience, and real verified reviews from other pet owners in your community.",
+    title: "Profils de confiance",
+    description: "Consultez les spécialités, l'expérience et les vrais avis vérifiés d'autres propriétaires d'animaux près de chez vous.",
     Icon: UserCheck,
     colorClass: "bg-violet-50 border-violet-100",
     iconColorClass: "text-violet-600",
@@ -47,7 +47,7 @@ export function Features() {
   return (
     <section id="features" className="py-28 bg-[#fdf6f0] relative overflow-hidden">
 
-      {/* Background decoration — fixed opacity */}
+      {/* Background decoration */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div className="absolute top-10 left-10 w-64 h-64 bg-[#a78bfa]/8 rounded-full blur-[120px]" />
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-[#fda4af]/8 rounded-full blur-[120px]" />
@@ -55,13 +55,13 @@ export function Features() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-        {/* Section header — fixed semantic hierarchy */}
+        {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-20">
           <p className="text-sm font-bold text-[#a78bfa] uppercase tracking-[0.2em] mb-4">
-            Why Vetalist?
+            Pourquoi Vetalist ?
           </p>
           <h2 className="font-['Playfair_Display'] text-4xl md:text-5xl font-bold text-[#1e1a2e] leading-tight tracking-tight">
-            Everything your pet deserves, all in one place.
+            Tout ce que votre animal mérite, réuni en un seul endroit.
           </h2>
           <div className="mt-6 w-16 h-1 bg-gradient-to-r from-[#a78bfa] to-[#c4b5fd] mx-auto rounded-full" />
         </div>

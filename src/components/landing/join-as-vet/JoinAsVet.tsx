@@ -9,23 +9,23 @@ import { Briefcase, TrendingUp, Calendar, Star, ArrowRight } from "lucide-react"
 const benefits = [
   {
     Icon: TrendingUp,
-    title: "Grow Your Client Base",
-    description: "Reach thousands of pet owners actively looking for care.",
+    title: "Développez votre clientèle",
+    description: "Atteignez des milliers de propriétaires d'animaux à la recherche de soins.",
   },
   {
     Icon: Calendar,
-    title: "Effortless Scheduling",
-    description: "Manage your availability and bookings in one place.",
+    title: "Agenda simplifié",
+    description: "Gérez vos disponibilités et vos réservations en un seul endroit.",
   },
   {
     Icon: Star,
-    title: "Build Your Reputation",
-    description: "Collect verified reviews that set you apart.",
+    title: "Construisez votre réputation",
+    description: "Collectez des avis vérifiés qui vous démarquent de la concurrence.",
   },
   {
     Icon: Briefcase,
-    title: "Professional Verified",
-    description: "Your credentials are showcased to build instant trust.",
+    title: "Profil professionnel vérifié",
+    description: "Vos diplômes et certifications sont mis en avant pour inspirer confiance.",
   },
 ];
 
@@ -46,16 +46,16 @@ export function JoinAsVet() {
           <div className="w-full lg:w-1/2 space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#a78bfa] text-sm font-medium">
               <Briefcase size={15} />
-              <span>For Veterinary Professionals</span>
+              <span>Pour les professionnels vétérinaires</span>
             </div>
 
             <div>
               <h2 className="font-['Playfair_Display'] text-4xl md:text-5xl font-bold text-white leading-[1.1] tracking-tight">
-                Grow your practice with{" "}
+                Développez votre cabinet avec{" "}
                 <span className="text-[#a78bfa]">Vetalist</span>
               </h2>
               <p className="mt-5 text-lg text-slate-300 max-w-lg leading-relaxed font-['DM_Sans'] font-light">
-                Join France's most trusted veterinary marketplace. Whether you're an established clinic or just starting out — we help you reach the right clients and manage your time better.
+                Rejoignez la plateforme vétérinaire la plus fiable de France. Que vous soyez une clinique établie ou en début de carrière — nous vous aidons à trouver les bons clients et à mieux gérer votre temps.
               </p>
             </div>
 
@@ -81,12 +81,12 @@ export function JoinAsVet() {
                 className="h-14 px-10 text-base bg-[#a78bfa] hover:bg-[#c4b5fd] text-white rounded-full shadow-xl shadow-[#a78bfa]/20 transition-all group font-semibold"
               >
                 <Link href="/register">
-                  Register as a Veterinarian
+                  S'inscrire en tant que vétérinaire
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
               <p className="mt-3 text-xs text-slate-500">
-                Free to join · Verification takes 24–48 hours
+                Inscription gratuite · Vérification sous 24 à 48 heures
               </p>
             </div>
           </div>
@@ -96,7 +96,7 @@ export function JoinAsVet() {
             <div className="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 aspect-square max-w-[480px] mx-auto">
               <Image
                 src="https://res.cloudinary.com/dhvha4h1o/image/upload/v1777287923/vet.join-Vetalist_d8yeof.jpg"
-                alt="Professional veterinarian at work"
+                alt="Vétérinaire professionnel en consultation"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 480px"
@@ -104,11 +104,11 @@ export function JoinAsVet() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#1e1a2e]/70 via-transparent to-transparent" />
             </div>
 
-            {/* Floating stats card — fixed overflow on small screens */}
+            {/* Floating stats card */}
             <div className="absolute bottom-4 right-4 lg:-bottom-6 lg:-right-4 z-20 bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl shadow-2xl max-w-[220px]">
               <p className="text-[#a78bfa] font-bold text-3xl font-['Playfair_Display']">98%</p>
               <p className="text-white text-sm font-medium leading-snug mt-1">
-                Client satisfaction among our vet partners.
+                Taux de satisfaction parmi nos vétérinaires partenaires.
               </p>
             </div>
 

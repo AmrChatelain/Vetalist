@@ -17,14 +17,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vetalist",
-  description: "Book trusted veterinarians in seconds. No waiting, no stress — just happy pets and healthy lives.",
+  title: "Vetalist — Trouvez un vétérinaire de confiance en France",
+  description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes. Sans attente, sans stress — juste des animaux heureux et en bonne santé.",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
   manifest: "/site.webmanifest",
-};
+  openGraph: {
+    title: "Vetalist — Trouvez un vétérinaire de confiance en France",
+    description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes. Sans attente, sans stress — juste des animaux heureux et en bonne santé.",
+    locale: "fr_FR",
+    type: "website",
+    url: "https://vetalist.fr",
+    siteName: "Vetalist",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vetalist — Trouvez un vétérinaire de confiance en France",
+    description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes.",
+  },
+  alternates: {
+    canonical: "https://vetalist.fr",
+  },
+}
 
 export default function RootLayout({
   children,
@@ -33,7 +49,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="fr"
       className={cn(
         "h-full",
         "antialiased",

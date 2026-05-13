@@ -1,4 +1,4 @@
-// src/components/ui/HamsterLoading.tsx
+
 "use client";
 
 export default function HamsterLoading() {

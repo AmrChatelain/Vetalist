@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
-import { registerAction } from "./actions"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { registerAction } from "./actions";
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const [role, setRole] = useState<"CLIENT" | "VET">("CLIENT")
-  const [error, setError] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [role, setRole] = useState<"CLIENT" | "VET">("CLIENT");
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(false);
 
   function handleGoogleSignIn() {
     // Set a short-lived cookie with the selected role BEFORE redirecting to Google.
@@ -22,37 +22,37 @@ export default function RegisterPage() {
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(null)
-    setFieldErrors({})
-    setLoading(true)
+    e.preventDefault();
+    setError(null);
+    setFieldErrors({});
+    setLoading(true);
 
-    const form = e.currentTarget
-    const formData = new FormData(form)
-    formData.set("role", role)
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    formData.set("role", role);
 
-    const result = await registerAction(formData)
-    setLoading(false)
+    const result = await registerAction(formData);
+    setLoading(false);
 
     if (result.errors) {
-      setFieldErrors(result.errors)
-      return
+      setFieldErrors(result.errors);
+      return;
     }
 
     if (result.error) {
-      setError(result.error)
-      return
+      setError(result.error);
+      return;
     }
 
     if (result.success) {
-      const email = formData.get("email") as string
-      const password = formData.get("password") as string
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
 
       await signIn("credentials", {
         email,
         password,
         callbackUrl: role === "VET" ? "/dashboard/vet" : "/dashboard/client",
-      })
+      });
     }
   }
 
@@ -136,12 +136,12 @@ export default function RegisterPage() {
         .logo-icon {
           width: 44px;
           height: 44px;
-          background: linear-gradient(135deg, #fbbf24, #fda4af);
+         background: linear-gradient(135deg, #60a5fa, #8b5cf6);
           border-radius: 13px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(251,191,36,0.3);
+          box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
         }
 
         .logo-text {
@@ -518,49 +518,86 @@ export default function RegisterPage() {
         <div className="paw-bg paw-3">🐾</div>
 
         <div className="reg-card">
-
           <div className="reg-header">
             <div className="logo-area">
               <div className="logo-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                  <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z"/>
+                  <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z" />
                 </svg>
               </div>
-              <div className="logo-text">Vet<span>alist</span></div>
+              <div className="logo-text">
+                Vet<span>alist</span>
+              </div>
             </div>
             <h1 className="reg-title">Create your account</h1>
-            <p className="reg-subtitle">Join Vetalist and care for your furry family</p>
+            <p className="reg-subtitle">
+              Join Vetalist and care for your furry family
+            </p>
           </div>
 
           <div className="role-toggle">
             <button
               type="button"
               className={`role-btn ${role === "CLIENT" ? "active client" : ""}`}
-              onClick={() => { setRole("CLIENT"); setError(null); setFieldErrors({}) }}
+              onClick={() => {
+                setRole("CLIENT");
+                setError(null);
+                setFieldErrors({});
+              }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
               </svg>
               I&apos;m a Client
             </button>
             <button
               type="button"
               className={`role-btn ${role === "VET" ? "active vet" : ""}`}
-              onClick={() => { setRole("VET"); setError(null); setFieldErrors({}) }}
+              onClick={() => {
+                setRole("VET");
+                setError(null);
+                setFieldErrors({});
+              }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z"/>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z" />
               </svg>
               I&apos;m a Vet
             </button>
           </div>
 
-          <button type="button" className="google-btn" onClick={handleGoogleSignIn}>
+          <button
+            type="button"
+            className="google-btn"
+            onClick={handleGoogleSignIn}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
             </svg>
             Continue with Google
           </button>
@@ -581,7 +618,9 @@ export default function RegisterPage() {
                   placeholder="Jane"
                   className={`field-input ${fieldErrors.firstName ? "has-error" : ""}`}
                 />
-                {fieldErrors.firstName && <p className="field-error">{fieldErrors.firstName[0]}</p>}
+                {fieldErrors.firstName && (
+                  <p className="field-error">{fieldErrors.firstName[0]}</p>
+                )}
               </div>
               <div>
                 <label className="field-label">Last Name</label>
@@ -591,7 +630,9 @@ export default function RegisterPage() {
                   placeholder="Doe"
                   className={`field-input ${fieldErrors.lastName ? "has-error" : ""}`}
                 />
-                {fieldErrors.lastName && <p className="field-error">{fieldErrors.lastName[0]}</p>}
+                {fieldErrors.lastName && (
+                  <p className="field-error">{fieldErrors.lastName[0]}</p>
+                )}
               </div>
             </div>
 
@@ -605,7 +646,9 @@ export default function RegisterPage() {
                 autoComplete="email"
                 className={`field-input ${fieldErrors.email ? "has-error" : ""}`}
               />
-              {fieldErrors.email && <p className="field-error">{fieldErrors.email[0]}</p>}
+              {fieldErrors.email && (
+                <p className="field-error">{fieldErrors.email[0]}</p>
+              )}
             </div>
 
             <div className="form-field">
@@ -619,7 +662,9 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 className={`field-input ${fieldErrors.password ? "has-error" : ""}`}
               />
-              {fieldErrors.password && <p className="field-error">{fieldErrors.password[0]}</p>}
+              {fieldErrors.password && (
+                <p className="field-error">{fieldErrors.password[0]}</p>
+              )}
             </div>
 
             {(error || Object.keys(fieldErrors).length > 0) && (
@@ -633,32 +678,57 @@ export default function RegisterPage() {
                 <div className="particle p3">✨</div>
 
                 <svg className="cat-orange" viewBox="0 0 50 50">
-                  <path className="tail" d="M8 42C2 35 2 20 8 15" stroke="#fcd34d" strokeWidth={4} strokeLinecap="round" fill="none"/>
-                  <path d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45" fill="#fbbf24"/>
-                  <path d="M15 18L8 5L22 15Z" fill="#fbbf24"/>
-                  <path d="M15 18L11 9L19 15Z" fill="#fda4af"/>
-                  <path d="M35 18L42 5L28 15Z" fill="#fbbf24"/>
-                  <path d="M35 18L39 9L31 15Z" fill="#fda4af"/>
-                  <circle cx={20} cy={28} r={3} fill="white"/>
-                  <circle cx={20} cy={28} r="1.5" fill="#334155"/>
-                  <circle cx={30} cy={28} r={3} fill="white"/>
-                  <circle cx={30} cy={28} r="1.5" fill="#334155"/>
-                  <circle cx={16} cy={34} r={2} fill="#fda4af" opacity="0.6"/>
-                  <circle cx={34} cy={34} r={2} fill="#fda4af" opacity="0.6"/>
-                  <circle cx={21} cy={27} r="0.7" fill="white" opacity="0.8"/>
-                  <circle cx={31} cy={27} r="0.7" fill="white" opacity="0.8"/>
+                  <path
+                    className="tail"
+                    d="M8 42C2 35 2 20 8 15"
+                    stroke="#fcd34d"
+                    strokeWidth={4}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  <path
+                    d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45"
+                    fill="#fbbf24"
+                  />
+                  <path d="M15 18L8 5L22 15Z" fill="#fbbf24" />
+                  <path d="M15 18L11 9L19 15Z" fill="#fda4af" />
+                  <path d="M35 18L42 5L28 15Z" fill="#fbbf24" />
+                  <path d="M35 18L39 9L31 15Z" fill="#fda4af" />
+                  <circle cx={20} cy={28} r={3} fill="white" />
+                  <circle cx={20} cy={28} r="1.5" fill="#334155" />
+                  <circle cx={30} cy={28} r={3} fill="white" />
+                  <circle cx={30} cy={28} r="1.5" fill="#334155" />
+                  <circle cx={16} cy={34} r={2} fill="#fda4af" opacity="0.6" />
+                  <circle cx={34} cy={34} r={2} fill="#fda4af" opacity="0.6" />
+                  <circle cx={21} cy={27} r="0.7" fill="white" opacity="0.8" />
+                  <circle cx={31} cy={27} r="0.7" fill="white" opacity="0.8" />
                 </svg>
 
                 <svg className="cat-cream" viewBox="0 0 50 50">
-                  <path d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45" fill="#fef3c7"/>
-                  <path d="M15 18L8 8L22 15Z" fill="#fef3c7"/>
-                  <path d="M35 18L42 8L28 15Z" fill="#fef3c7"/>
+                  <path
+                    d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45"
+                    fill="#fef3c7"
+                  />
+                  <path d="M15 18L8 8L22 15Z" fill="#fef3c7" />
+                  <path d="M35 18L42 8L28 15Z" fill="#fef3c7" />
                   <g className="cream-eyes">
-                    <circle cx={20} cy={28} r="1.8" fill="#92400e"/>
-                    <circle cx={30} cy={28} r="1.8" fill="#92400e"/>
+                    <circle cx={20} cy={28} r="1.8" fill="#92400e" />
+                    <circle cx={30} cy={28} r="1.8" fill="#92400e" />
                   </g>
-                  <circle cx={15} cy={33} r="2.5" fill="#fecaca" opacity="0.5"/>
-                  <circle cx={35} cy={33} r="2.5" fill="#fecaca" opacity="0.5"/>
+                  <circle
+                    cx={15}
+                    cy={33}
+                    r="2.5"
+                    fill="#fecaca"
+                    opacity="0.5"
+                  />
+                  <circle
+                    cx={35}
+                    cy={33}
+                    r="2.5"
+                    fill="#fecaca"
+                    opacity="0.5"
+                  />
                 </svg>
 
                 <div className="btn-body">
@@ -666,18 +736,28 @@ export default function RegisterPage() {
                   <div className="btn-text">
                     <span className="btn-label">Join now</span>
                     <span className="btn-main">
-                      {loading
-                        ? (<><span className="loading-dot"/><span className="loading-dot"/><span className="loading-dot"/></>)
-                        : "Vetalist"
-                      }
+                      {loading ? (
+                        <>
+                          <span className="loading-dot" />
+                          <span className="loading-dot" />
+                          <span className="loading-dot" />
+                        </>
+                      ) : (
+                        "Vetalist"
+                      )}
                     </span>
                   </div>
                   <div className="btn-paw">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#c4b5fd">
-                      <circle cx={12} cy={16} r="3.5"/>
-                      <circle cx={8} cy={11} r={2}/>
-                      <circle cx={12} cy={8} r={2}/>
-                      <circle cx={16} cy={11} r={2}/>
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="#c4b5fd"
+                    >
+                      <circle cx={12} cy={16} r="3.5" />
+                      <circle cx={8} cy={11} r={2} />
+                      <circle cx={12} cy={8} r={2} />
+                      <circle cx={16} cy={11} r={2} />
                     </svg>
                   </div>
                   <div className="btn-glow" />
@@ -689,9 +769,8 @@ export default function RegisterPage() {
           <p className="signin-link">
             Already have an account? <a href="/login">Sign in</a>
           </p>
-
         </div>
       </div>
     </>
-  )
+  );
 }

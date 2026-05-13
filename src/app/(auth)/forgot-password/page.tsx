@@ -65,9 +65,9 @@ export default function ForgotPasswordPage() {
 
         .logo-icon {
           width: 48px; height: 48px;
-          background: linear-gradient(135deg, #fbbf24, #fda4af);
+          background: linear-gradient(135deg, #60a5fa, #8b5cf6);
           border-radius: 14px; display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px rgba(251,191,36,0.3);
+          box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
         }
 
         .logo-text { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 600; color: #1e1a2e; }

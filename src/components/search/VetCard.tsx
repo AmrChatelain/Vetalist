@@ -159,7 +159,7 @@ export function VetCard({
         <Link href={`/vets/${id}`}>
           <Button
             size="sm"
-            className="bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 gap-1.5 rounded-xl font-semibold text-xs"
+            className="bg-linear-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 gap-1.5 rounded-xl font-semibold text-xs"
           >
             Voir le profil
             <ChevronRight size={13} />

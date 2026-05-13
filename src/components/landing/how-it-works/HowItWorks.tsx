@@ -16,27 +16,26 @@ interface Step {
 const steps: Step[] = [
   {
     number: "01",
-    title: "Search & Discover",
-    description: "Find specialized veterinarians in your area by specialty, city, or zip code — instantly.",
+    title: "Rechercher & Découvrir",
+    description: "Trouvez des vétérinaires spécialisés près de chez vous par spécialité, ville ou code postal — instantanément.",
     Icon: Search,
   },
   {
     number: "02",
-    title: "Select & Book",
-    description: "Browse verified profiles, read real reviews, and book an appointment in just a few taps.",
+    title: "Choisir & Réserver",
+    description: "Parcourez les profils vérifiés, lisez de vrais avis et réservez un rendez-vous en quelques clics.",
     Icon: CalendarCheck,
   },
   {
     number: "03",
-    title: "Get Notified",
-    description: "Receive smart reminders via email and SMS so you never miss a critical appointment.",
+    title: "Recevoir des rappels",
+    description: "Recevez des rappels intelligents par e-mail et SMS pour ne jamais manquer un rendez-vous important.",
     Icon: BellRing,
   },
 ];
 
 export function HowItWorks() {
   return (
-    // Fixed: renamed id to "how-it-works" (was duplicate with Features)
     <section id="how-it-works" className="py-28 bg-[#fdf6f0] relative overflow-hidden">
 
       {/* Background decoration */}
@@ -50,17 +49,16 @@ export function HowItWorks() {
         {/* Section header */}
         <div className="text-center max-w-2xl mx-auto mb-20">
           <p className="text-sm font-bold text-[#a78bfa] uppercase tracking-[0.2em] mb-4">
-            Simple & Seamless
+            Simple & Intuitif
           </p>
           <h2 className="font-['Playfair_Display'] text-4xl md:text-5xl font-bold text-[#1e1a2e] leading-tight tracking-tight">
-            Three steps to a happier, healthier pet.
+            Trois étapes pour un animal heureux et en bonne santé.
           </h2>
           <div className="mt-6 w-16 h-1 bg-gradient-to-r from-[#a78bfa] to-[#c4b5fd] mx-auto rounded-full" />
         </div>
 
         {/* Steps */}
         <div className="relative">
-          {/* Connecting line — constrained between first and last icon centers */}
           <div
             className="hidden lg:block absolute top-10 h-[2px] bg-gradient-to-r from-[#a78bfa]/20 via-[#a78bfa]/40 to-[#a78bfa]/20 z-0"
             style={{ left: "calc(16.666% + 2.5rem)", right: "calc(16.666% + 2.5rem)" }}
@@ -93,18 +91,18 @@ export function HowItWorks() {
           </div>
         </div>
 
-        {/* CTA — added a real action button */}
+        {/* CTA */}
         <div className="mt-20 flex flex-col items-center gap-5">
           <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 font-medium text-sm">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Ready to get started? It takes less than 2 minutes.</span>
+            <span>Prêt à commencer ? Moins de 2 minutes suffisent.</span>
           </div>
           <Button
             asChild
             size="lg"
             className="h-13 px-8 bg-gradient-to-r from-[#a78bfa] to-[#c4b5fd] text-white hover:opacity-90 shadow-lg shadow-[#a78bfa]/20 rounded-full font-semibold"
           >
-            <Link href="/search">Find a Vet Now</Link>
+            <Link href="/search">Trouver un vétérinaire</Link>
           </Button>
         </div>
 
