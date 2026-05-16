@@ -115,6 +115,7 @@ model Appointment {
   pet                  Pet?              @relation(fields: [petId], references: [id])
   vet                  VetProfile        @relation(fields: [vetId], references: [id])
   emailLogs            EmailLog[]
+  @@unique([vetId, startTime])
 }
 
 model EmailLog {

@@ -3,6 +3,13 @@ import { prisma } from "@/lib/db";
 import { AppointmentTable } from "@/components/vet/AppointmentTable";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Mes rendez-vous",
+  robots: { index: false, follow: false },
+};
+
 
 async function getAppointments(vetProfileId: string) {
   const appointments = await prisma.appointment.findMany({

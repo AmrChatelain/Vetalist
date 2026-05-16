@@ -17,28 +17,54 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vetalist — Trouvez un vétérinaire de confiance en France",
+  title: {
+    default:  "Vetalist — Trouvez un vétérinaire de confiance en France",
+    template: "%s | Vetalist",
+  },
   description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes. Sans attente, sans stress — juste des animaux heureux et en bonne santé.",
+  keywords: ["vétérinaire", "rendez-vous vétérinaire", "consultation animaux", "vétérinaire France", "booking vétérinaire"],
+  authors: [{ name: "Vetalist" }],
+  creator: "Vetalist",
+  metadataBase: new URL("https://vetalist.fr"),
   icons: {
-    icon: "/favicon.ico",
+    icon:  "/favicon.ico",
     apple: "/apple-touch-icon.png",
+    other: [{ rel: "icon", url: "/Vitalist-logo.png" }],
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "Vetalist — Trouvez un vétérinaire de confiance en France",
+    title:       "Vetalist — Trouvez un vétérinaire de confiance en France",
     description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes. Sans attente, sans stress — juste des animaux heureux et en bonne santé.",
-    locale: "fr_FR",
-    type: "website",
-    url: "https://vetalist.fr",
-    siteName: "Vetalist",
+    locale:      "fr_FR",
+    type:        "website",
+    url:         "https://vetalist.fr",
+    siteName:    "Vetalist",
+    images: [{
+      url:    "/Vitalist-logo.png",
+      width:  1200,
+      height: 630,
+      alt:    "Vetalist — Plateforme de rendez-vous vétérinaires",
+    }],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Vetalist — Trouvez un vétérinaire de confiance en France",
+    card:        "summary_large_image",
+    title:       "Vetalist — Trouvez un vétérinaire de confiance en France",
     description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes.",
+    images:      ["/Vitalist-logo.png"],
   },
   alternates: {
     canonical: "https://vetalist.fr",
+  },
+  robots: {
+    index:               true,
+    follow:              true,
+    googleBot: {
+      index:             true,
+      follow:            true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet":       -1,
+    },
   },
 }
 

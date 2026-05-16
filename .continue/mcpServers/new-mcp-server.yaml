@@ -1,0 +1,81 @@
+name: New MCP server
+version: 0.0.1
+schema: v1
+{
+  "mcpServers": {
+    "web-search": {
+      "command": "node",
+      "args": [
+        "D:/LocalAI/web-search-mcp/dist/index.js"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "rss-fetching": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rss-reader-mcp"
+      ]
+    },
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "D:/LocalAI/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js",
+        "D:/"
+      ]
+    },
+    "github": {
+      "command": "node",
+      "args": [
+        "D:/LocalAI/node_modules/@modelcontextprotocol/server-github/dist/index.js"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "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"
+      }
+    },
+    "postgres": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "D:\\LocalAI\\node_modules\\@modelcontextprotocol\\server-postgres\\dist\\index.js",
+        "postgresql://postgres:DeborahAmr75*@localhost:5432/project-vet"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "notion": {
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    }
+  }
+}

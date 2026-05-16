@@ -1,354 +1,383 @@
-import { getVetDashboardData } from "@/actions/vet.actions"
-import { redirect } from "next/navigation"
-import { VetToggles } from "@/components/vet/VetToggles"
-import { AppointmentTable } from "@/components/vet/AppointmentTable"
+import { notFound } from "next/navigation"
+import { auth } from "@/lib/auth"
+import db from "@/lib/db"
+import Image from "next/image"
+import Link from "next/link"
+import { getNextAvailableSlot } from "@/lib/get-next-slot"
 import {
-  CalendarDays,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  TrendingUp,
+  MapPin, Phone, Clock, Languages, CreditCard,
+  BadgeCheck, Siren, ChevronRight, Star,
+  Stethoscope, CalendarDays, ArrowLeft, User,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import type { Metadata } from "next"
 
-export default async function VetDashboardPage() {
-  const data = await getVetDashboardData()
-  if (!data) redirect("/login")
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params
 
-  const { stats, upcomingAppointments, pastAppointments, vet } = data
+  const vet = await db.vetProfile.findUnique({
+    where:  { id, status: "ACTIVE" },
+    select: {
+      clinicName:  true,
+      city:        true,
+      specialties: true,
+      photoUrl:    true,
+      bio:         true,
+      user:        { select: { firstName: true, lastName: true, image: true } },
+    },
+  })
 
-  return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+  if (!vet) {
+    return { title: "Vétérinaire introuvable" }
+  }
 
-        .dash-greeting {
-          margin-bottom: 28px;
-        }
+  const name        = `Dr. ${vet.user.firstName} ${vet.user.lastName}`
+  const clinic      = vet.clinicName ? ` — ${vet.clinicName}` : ""
+  const title       = `${name}${clinic} à ${vet.city}`
+  const description = vet.bio
+    ?? `Prenez rendez-vous avec ${name} à ${vet.city}. ${vet.specialties.slice(0, 3).join(", ")}.`
+  const image       = vet.photoUrl ?? vet.user.image ?? "/Vitalist-logo.png"
 
-        .dash-greeting h1 {
-          font-family: 'Sora', sans-serif;
-          font-size: 1.6rem;
-          font-weight: 700;
-          color: #0f172a;
-          letter-spacing: -0.03em;
-        }
-
-        .dash-greeting p {
-          font-size: 0.875rem;
-          color: #64748b;
-          margin-top: 4px;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          margin-bottom: 28px;
-        }
-
-        .stat-card {
-          background: white;
-          border-radius: 14px;
-          padding: 20px 24px;
-          border: 1px solid #e2e8f0;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          transition: box-shadow 0.2s;
-        }
-
-        .stat-card:hover {
-          box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        }
-
-        .stat-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .stat-icon.blue   { background: #eff6ff; color: #3b82f6; }
-        .stat-icon.amber  { background: #fffbeb; color: #f59e0b; }
-        .stat-icon.green  { background: #f0fdf4; color: #10b981; }
-        .stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
-
-        .stat-info {}
-
-        .stat-value {
-          font-family: 'Sora', sans-serif;
-          font-size: 1.75rem;
-          font-weight: 700;
-          color: #0f172a;
-          line-height: 1;
-          margin-bottom: 4px;
-        }
-
-        .stat-label {
-          font-size: 0.75rem;
-          color: #64748b;
-          font-weight: 500;
-        }
-
-        /* Two-col layout */
-        .dash-grid {
-          display: grid;
-          grid-template-columns: 1fr 320px;
-          gap: 20px;
-          align-items: start;
-        }
-
-        @media (max-width: 1024px) {
-          .dash-grid { grid-template-columns: 1fr; }
-        }
-
-        /* Section cards */
-        .section-card {
-          background: white;
-          border-radius: 14px;
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-        }
-
-        .section-header {
-          padding: 20px 24px 16px;
-          border-bottom: 1px solid #f1f5f9;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .section-title {
-          font-family: 'Sora', sans-serif;
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #0f172a;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .section-count {
-          font-size: 0.7rem;
-          background: #f1f5f9;
-          color: #64748b;
-          border-radius: 20px;
-          padding: 2px 8px;
-          font-weight: 600;
-        }
-
-        .section-link {
-          font-size: 0.75rem;
-          color: #3b82f6;
-          text-decoration: none;
-          font-weight: 500;
-        }
-
-        .section-link:hover { text-decoration: underline; }
-
-        /* Mini appointment list */
-        .mini-apt-list { padding: 0; }
-
-        .mini-apt {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 14px 24px;
-          border-bottom: 1px solid #f8fafc;
-          transition: background 0.15s;
-        }
-
-        .mini-apt:last-child { border-bottom: none; }
-        .mini-apt:hover { background: #fafafa; }
-
-        .apt-time-col {
-          width: 54px;
-          flex-shrink: 0;
-          text-align: center;
-        }
-
-        .apt-time {
-          font-family: 'Sora', sans-serif;
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #0f172a;
-        }
-
-        .apt-date {
-          font-size: 0.65rem;
-          color: #94a3b8;
-        }
-
-        .apt-divider {
-          width: 1px;
-          height: 32px;
-          background: #e2e8f0;
-          flex-shrink: 0;
-        }
-
-        .apt-info { flex: 1; min-width: 0; }
-
-        .apt-client {
-          font-size: 0.825rem;
-          font-weight: 600;
-          color: #1e293b;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .apt-pet {
-          font-size: 0.725rem;
-          color: #94a3b8;
-          margin-top: 2px;
-        }
-
-        .apt-reason {
-          font-size: 0.7rem;
-          color: #64748b;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .apt-badge {
-          font-size: 0.65rem;
-          font-weight: 600;
-          padding: 3px 8px;
-          border-radius: 20px;
-          flex-shrink: 0;
-        }
-
-        .badge-pending   { background: #fffbeb; color: #d97706; }
-        .badge-confirmed { background: #f0fdf4; color: #059669; }
-        .badge-done      { background: #f1f5f9; color: #64748b; }
-        .badge-cancelled { background: #fef2f2; color: #dc2626; }
-
-        .empty-state {
-          padding: 40px 24px;
-          text-align: center;
-          color: #94a3b8;
-          font-size: 0.875rem;
-        }
-
-        .empty-icon {
-          width: 40px;
-          height: 40px;
-          background: #f1f5f9;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 12px;
-          color: #cbd5e1;
-        }
-      `}</style>
-
-      {/* Greeting */}
-      <div className="dash-greeting">
-        <h1>Good {getTimeOfDay()}, Dr. {vet.user?.firstName ?? ""} 👋</h1>
-        <p>Here's what's happening at your practice today.</p>
-      </div>
-
-      {/* Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon blue"><CalendarDays size={20} /></div>
-          <div className="stat-info">
-            <div className="stat-value">{stats.todayCount}</div>
-            <div className="stat-label">Today's appointments</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon amber"><Clock size={20} /></div>
-          <div className="stat-info">
-            <div className="stat-value">{stats.pendingCount}</div>
-            <div className="stat-label">Awaiting confirmation</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon green"><TrendingUp size={20} /></div>
-          <div className="stat-info">
-            <div className="stat-value">{stats.weekCount}</div>
-            <div className="stat-label">This week's bookings</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon purple">
-            {stats.isActive
-              ? <CheckCircle2 size={20} />
-              : <AlertCircle size={20} />}
-          </div>
-          <div className="stat-info">
-            <div className="stat-value" style={{ fontSize: "1rem", paddingTop: 4 }}>
-              {stats.isActive ? "Open" : "Closed"}
-            </div>
-            <div className="stat-label">Practice status</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main grid */}
-      <div className="dash-grid">
-        {/* Upcoming appointments */}
-        <div className="section-card">
-          <div className="section-header">
-            <span className="section-title">
-              <CalendarDays size={15} />
-              Upcoming appointments
-              <span className="section-count">{upcomingAppointments.length}</span>
-            </span>
-            <a href="/dashboard/vet/appointments" className="section-link">View all →</a>
-          </div>
-          <div className="mini-apt-list">
-            {upcomingAppointments.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon"><CalendarDays size={18} /></div>
-                No upcoming appointments
-              </div>
-            ) : (
-              upcomingAppointments.slice(0, 8).map((apt) => (
-                <div key={apt.id} className="mini-apt">
-                  <div className="apt-time-col">
-                    <div className="apt-time">
-                      {new Date(apt.startTime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                    <div className="apt-date">
-                      {new Date(apt.startTime).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                    </div>
-                  </div>
-                  <div className="apt-divider" />
-                  <div className="apt-info">
-                    <div className="apt-client">{apt.client.firstName} {apt.client.lastName}</div>
-                    <div className="apt-pet">{apt.pet ? `${apt.pet.name} · ${apt.pet.species}` : "No pet"}</div>
-                    <div className="apt-reason">{apt.reason}</div>
-                  </div>
-                  <span className={`apt-badge badge-${apt.status.toLowerCase()}`}>
-                    {apt.status === "PENDING" ? "Pending" : apt.status === "CONFIRMED" ? "Confirmed" : apt.status}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar: Toggles */}
-        <VetToggles
-          isActive={stats.isActive}
-          acceptsEmergencies={stats.acceptsEmergencies}
-        />
-      </div>
-    </>
-  )
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: image, width: 400, height: 400, alt: name }],
+      type:   "profile",
+    },
+    twitter: { card: "summary", title, description, images: [image] },
+    alternates: { canonical: `https://vetalist.fr/vets/${id}` },
+  }
 }
 
-function getTimeOfDay() {
-  const h = new Date().getHours()
-  if (h < 12) return "morning"
-  if (h < 17) return "afternoon"
-  return "evening"
+interface VetProfilePageProps {
+  params: Promise<{ id: string }>
+}
+
+function formatNextSlot(slot: Date | null) {
+  if (!slot) return { label: "Aucune disponibilité trouvée", color: "text-slate-400" }
+
+  const now      = new Date()
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+  const weekEnd  = new Date(now.getTime() + 7 * 86_400_000)
+
+  const time = slot.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+  const date = slot.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+
+  if (slot <= todayEnd) return { label: `Aujourd'hui à ${time}`, color: "text-emerald-600" }
+  if (slot <= weekEnd)  return { label: `${date} à ${time}`,    color: "text-blue-600"    }
+  return                       { label: `${date} à ${time}`,    color: "text-slate-600"   }
+}
+
+export default async function VetProfilePage({ params }: VetProfilePageProps) {
+  const { id } = await params
+  const session = await auth()
+
+  const vet = await db.vetProfile.findUnique({
+    where:   { id, status: "ACTIVE" },
+    include: {
+      user:         { select: { firstName: true, lastName: true, image: true, email: true } },
+      workingHours: { orderBy: { dayOfWeek: "asc" } },
+    },
+  })
+
+  if (!vet) notFound()
+
+  const nextSlot = await getNextAvailableSlot(vet.id)
+  const { label: slotLabel, color: slotColor } = formatNextSlot(nextSlot)
+
+  const DAY_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
+  const displayPhoto = vet.photoUrl || vet.user.image
+  const isLoggedIn   = !!session?.user
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Back nav */}
+      <div className="bg-white border-b border-slate-200 px-4 py-3">
+        <div className="max-w-5xl mx-auto">
+          <Link
+            href="/search"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-violet-600 transition-colors"
+          >
+            <ArrowLeft size={14} /> Retour aux résultats
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+          {/* ── LEFT: Main profile ── */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* Header card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              {/* Banner */}
+              <div className="h-24 bg-gradient-to-r from-violet-500 to-purple-600" />
+
+              <div className="px-6 pb-6">
+                {/* Avatar */}
+                <div className="flex items-end justify-between -mt-10 mb-4">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl border-4 border-white overflow-hidden bg-violet-100 shadow-sm">
+                      {displayPhoto ? (
+                        <Image
+                          src={displayPhoto}
+                          alt={`Dr. ${vet.user.firstName} ${vet.user.lastName}`}
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-violet-400 font-bold text-2xl">
+                          {vet.user.firstName[0]}{vet.user.lastName[0]}
+                        </div>
+                      )}
+                    </div>
+                    {vet.isVerified && (
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center">
+                        <BadgeCheck size={12} className="text-white" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Emergency badge */}
+                  {(vet as any).acceptsEmergencies && (
+                    <Badge variant="outline" className="text-rose-600 border-rose-200 bg-rose-50 gap-1">
+                      <Siren size={12} /> Accepte les urgences
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Name & clinic */}
+                <div className="flex items-start gap-2 flex-wrap">
+                  <h1 className="text-2xl font-bold text-slate-900 font-['Sora']">
+                    Dr. {vet.user.firstName} {vet.user.lastName}
+                  </h1>
+                  {vet.isVerified && (
+                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100 gap-1 mt-1">
+                      <BadgeCheck size={11} /> Vérifié
+                    </Badge>
+                  )}
+                </div>
+
+                {vet.clinicName && (
+                  <p className="text-slate-600 flex items-center gap-1.5 mt-1">
+                    <Stethoscope size={14} className="text-slate-400" />
+                    {vet.clinicName}
+                  </p>
+                )}
+
+                <p className="text-sm text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <MapPin size={13} />
+                  {vet.street}, {vet.zipCode} {vet.city}
+                </p>
+
+                {/* Specialties */}
+                {vet.specialties.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-4">
+                    {vet.specialties.map((s) => (
+                      <span
+                        key={s}
+                        className="text-xs bg-violet-50 text-violet-700 border border-violet-100 rounded-lg px-2.5 py-1 font-medium"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bio */}
+            {vet.bio && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
+                  À propos
+                </h2>
+                <p className="text-slate-600 text-sm leading-relaxed">{vet.bio}</p>
+              </div>
+            )}
+
+            {/* Services & Info */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                Services & informations
+              </h2>
+
+              {vet.careTypes.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    Types de soins
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {vet.careTypes.map((c) => (
+                      <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Languages */}
+                {vet.languagesSpoken.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                      <Languages size={11} /> Langues
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {vet.languagesSpoken.map((l) => (
+                        <Badge key={l} variant="outline" className="text-xs">{l}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment */}
+                {vet.paymentMethods.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                      <CreditCard size={11} /> Paiement
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {vet.paymentMethods.map((p) => (
+                        <Badge key={p} variant="outline" className="text-xs">{p}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Working hours */}
+            {vet.workingHours.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Clock size={13} /> Horaires d'ouverture
+                </h2>
+                <div className="space-y-2">
+                  {DAY_NAMES.map((dayName, dayIdx) => {
+                    const hours = vet.workingHours.find((h) => h.dayOfWeek === dayIdx)
+                    const isToday = new Date().getDay() === dayIdx
+                    return (
+                      <div
+                        key={dayIdx}
+                        className={`flex items-center justify-between py-2 px-3 rounded-lg text-sm
+                          ${isToday ? "bg-violet-50 border border-violet-100" : ""}`}
+                      >
+                        <span className={`font-medium ${isToday ? "text-violet-700" : "text-slate-600"}`}>
+                          {dayName}
+                          {isToday && <span className="ml-2 text-xs text-violet-500 font-normal">Aujourd'hui</span>}
+                        </span>
+                        {hours ? (
+                          <span className={`text-sm ${isToday ? "text-violet-700 font-semibold" : "text-slate-500"}`}>
+                            {hours.startTime} – {hours.endTime}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-sm">Fermé</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── RIGHT: Booking sidebar ── */}
+          <div className="space-y-4 lg:sticky lg:top-24">
+
+            {/* Next slot + Book CTA */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <h2 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <CalendarDays size={14} className="text-violet-500" />
+                Prochaine disponibilité
+              </h2>
+
+              <div className={`text-sm font-semibold ${slotColor} mb-4`}>
+                {slotLabel}
+              </div>
+
+              {isLoggedIn ? (
+                <Button
+                  asChild
+                  className="w-full bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
+                >
+                  <Link href={`/book/${vet.id}`}>
+                    Prendre rendez-vous
+                    <ChevronRight size={15} />
+                  </Link>
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    asChild
+                    className="w-full bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
+                  >
+                    <Link href={`/login?callbackUrl=/vets/${vet.id}`}>
+                      Se connecter pour réserver
+                      <ChevronRight size={15} />
+                    </Link>
+                  </Button>
+                  <p className="text-xs text-center text-slate-400">
+                    Pas encore de compte ?{" "}
+                    <Link href="/register" className="text-violet-500 hover:underline">
+                      Créer un compte gratuit
+                    </Link>
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-400">
+                <Star size={11} className="text-amber-400 fill-amber-400" />
+                Vétérinaire vérifié par Vetalist
+              </div>
+            </div>
+
+            {/* Contact info */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+              <h2 className="text-sm font-bold text-slate-700">Contact & adresse</h2>
+
+              <div className="flex items-start gap-2.5 text-sm text-slate-600">
+                <MapPin size={14} className="text-slate-400 flex-shrink-0 mt-0.5" />
+                <span>{vet.street},<br/>{vet.zipCode} {vet.city}</span>
+              </div>
+
+              {vet.clinicPhone && (
+                <div className="flex items-center gap-2.5 text-sm text-slate-600">
+                  <Phone size={14} className="text-slate-400 flex-shrink-0" />
+                  <a
+                    href={`tel:${vet.clinicPhone}`}
+                    className="hover:text-violet-600 transition-colors"
+                  >
+                    {vet.clinicPhone}
+                  </a>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2.5 text-sm text-slate-600">
+                <Clock size={14} className="text-slate-400 flex-shrink-0" />
+                <span>Durée des RDV : {vet.slotDurationMin} minutes</span>
+              </div>
+            </div>
+
+            {/* Slot duration info */}
+            <div className="bg-violet-50 border border-violet-100 rounded-xl p-4 text-xs text-violet-700 leading-relaxed">
+              🐾 <strong>Réservation sécurisée</strong><br/>
+              Votre rendez-vous sera confirmé par le vétérinaire. Vous recevrez un e-mail de confirmation.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
 }

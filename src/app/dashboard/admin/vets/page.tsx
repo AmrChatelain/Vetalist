@@ -10,6 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Admin — Vétérinaires",
+  robots: { index: false, follow: false },
+};
+
 
 export default async function AdminVetsPage() {
   const session = await auth()

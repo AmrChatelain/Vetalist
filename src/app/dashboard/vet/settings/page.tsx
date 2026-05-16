@@ -5,6 +5,13 @@ import { AvailabilityManager } from "@/components/vet/AvailabilityManager"
 import { VetToggles } from "@/components/vet/VetToggles"
 import { SlotDurationPicker } from "@/components/vet/SlotDurationPicker"
 import { TimeOffManager } from "@/components/vet/TimeOffManager"
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Paramètres",
+  robots: { index: false, follow: false },
+};
+
 
 export default async function VetSettingsPage() {
   const session = await auth()

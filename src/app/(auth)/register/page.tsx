@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerAction } from "./actions";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Créer un compte",
+  description: "Créez votre compte Vetalist gratuit en quelques secondes.",
+  robots: { index: false, follow: false },
+};
 
 export default function RegisterPage() {
   const router = useRouter();

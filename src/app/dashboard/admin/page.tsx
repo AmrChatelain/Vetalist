@@ -9,6 +9,12 @@ import { Users, Clock, CheckCircle2, ShieldCheck, BadgeCheck } from "lucide-reac
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title:  "Admin — Tableau de bord",
+  robots: { index: false, follow: false },
+}
 
 export default async function AdminDashboardPage() {
   const session = await auth()

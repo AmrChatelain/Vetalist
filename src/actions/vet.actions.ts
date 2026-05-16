@@ -41,7 +41,7 @@ async function buildAppointmentEmailData(appointmentId: string): Promise<Appoint
     vetName:         `${apt.vet.user.firstName} ${apt.vet.user.lastName}`,
     clinicName:      apt.vet.clinicName ?? "Vetalist Clinic",
     address:         `${apt.vet.street}, ${apt.vet.zipCode} ${apt.vet.city}`,
-    date: new Date(apt.startTime).toLocaleDateString("en-GB", {
+    date: new Date(apt.startTime).toLocaleDateString("fr-FR", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
     }),
     time: new Date(apt.startTime).toLocaleTimeString("fr-FR", {

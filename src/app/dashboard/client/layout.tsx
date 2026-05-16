@@ -2,18 +2,18 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import {
-  LayoutDashboard, CalendarDays, UserCircle,
-  Settings, LogOut, Stethoscope, Menu,
+  PawPrint, LayoutDashboard, CalendarDays,
+  PawPrint as PawIcon, UserCircle, LogOut, Menu,
 } from "lucide-react"
 import { NavLink } from "@/components/dashboard/NavLink"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 
 const navItems = [
-  { href: "/dashboard/vet",              label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/dashboard/vet/appointments", label: "Rendez-vous",     icon: CalendarDays    },
-  { href: "/dashboard/vet/profile",      label: "Profil",          icon: UserCircle      },
-  { href: "/dashboard/vet/settings",     label: "Paramètres",      icon: Settings        },
+  { href: "/dashboard/client",              label: "Tableau de bord", icon: LayoutDashboard },
+  { href: "/dashboard/client/appointments", label: "Mes rendez-vous", icon: CalendarDays    },
+  { href: "/dashboard/client/pets",         label: "Mes animaux",     icon: PawIcon         },
+  { href: "/dashboard/client/settings",     label: "Mon profil",      icon: UserCircle      },
 ]
 
 function SidebarContent({ initials, firstName, lastName }: {
@@ -22,41 +22,41 @@ function SidebarContent({ initials, firstName, lastName }: {
   lastName:  string
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#0b1929" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#1e1a2e" }}>
       {/* Logo */}
       <div style={{ padding: "28px 24px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <Link href="/dashboard/vet" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-            background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+            background: "linear-gradient(135deg, #a78bfa, #7c3aed)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 12px rgba(59,130,246,0.4)",
+            boxShadow: "0 4px 12px rgba(167,139,250,0.4)",
           }}>
-            <Stethoscope size={18} color="white" />
+            <PawPrint size={18} color="white" />
           </div>
-          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.1rem", fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
-            Vet<span style={{ color: "#60a5fa" }}>alist</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: 700, color: "#fff" }}>
+            Veta<span style={{ color: "#a78bfa" }}>list</span>
           </span>
         </Link>
         <div style={{
           display: "inline-block", marginTop: 8, fontSize: "0.65rem", fontWeight: 600,
-          color: "#60a5fa", background: "rgba(59,130,246,0.12)",
-          border: "1px solid rgba(59,130,246,0.2)", borderRadius: 4,
+          color: "#a78bfa", background: "rgba(167,139,250,0.12)",
+          border: "1px solid rgba(167,139,250,0.2)", borderRadius: 4,
           padding: "2px 8px", letterSpacing: "0.1em", textTransform: "uppercase",
         }}>
-          Portail vétérinaire
+          Espace client
         </div>
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "20px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
           .nav-label { font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.15em;padding:0 12px;margin:8px 0 6px; }
           .nav-link { display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;text-decoration:none;color:rgba(255,255,255,0.55);font-size:0.875rem;font-weight:500;transition:all 0.2s ease;position:relative; }
           .nav-link:hover { background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.9); }
-          .nav-link.active { background:rgba(59,130,246,0.15);color:#60a5fa; }
-          .nav-link.active::before { content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:#3b82f6;border-radius:0 3px 3px 0; }
+          .nav-link.active { background:rgba(167,139,250,0.15);color:#a78bfa; }
+          .nav-link.active::before { content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:#a78bfa;border-radius:0 3px 3px 0; }
           .nav-chevron { margin-left:auto;opacity:0;transition:opacity 0.2s; }
           .nav-link:hover .nav-chevron, .nav-link.active .nav-chevron { opacity:1; }
           .signout-btn { display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border-radius:8px;background:transparent;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.8rem;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.2s;text-align:left; }
@@ -73,7 +73,7 @@ function SidebarContent({ initials, firstName, lastName }: {
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 10, background: "rgba(255,255,255,0.04)", marginBottom: 8 }}>
           <div style={{
             width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-            background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+            background: "linear-gradient(135deg, #a78bfa, #7c3aed)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "0.75rem", fontWeight: 700, color: "white",
           }}>
@@ -81,9 +81,9 @@ function SidebarContent({ initials, firstName, lastName }: {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              Dr. {firstName} {lastName}
+              {firstName} {lastName}
             </div>
-            <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)" }}>Vétérinaire</div>
+            <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)" }}>Client</div>
           </div>
         </div>
         <form
@@ -103,16 +103,17 @@ function SidebarContent({ initials, firstName, lastName }: {
   )
 }
 
-export default async function VetDashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user || session.user.role !== "VET") redirect("/login")
+  if (!session?.user)                 redirect("/login")
+  if (session.user.role !== "CLIENT") redirect("/dashboard/vet")
 
-  const firstName = session.user.firstName || "Docteur"
+  const firstName = session.user.firstName || "Vous"
   const lastName  = session.user.lastName  || ""
   const initials  = `${firstName[0]}${lastName[0] || ""}`.toUpperCase()
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f0f4f8", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f5f0fa", fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Desktop sidebar — hidden on mobile */}
       <aside className="hidden md:flex" style={{
@@ -128,7 +129,7 @@ export default async function VetDashboardLayout({ children }: { children: React
 
         {/* Topbar */}
         <div style={{
-          background: "white", borderBottom: "1px solid #e2e8f0",
+          background: "white", borderBottom: "1px solid #e9e4f5",
           padding: "0 24px", height: 64,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           position: "sticky", top: 0, zIndex: 40,
@@ -146,8 +147,8 @@ export default async function VetDashboardLayout({ children }: { children: React
               </SheetContent>
             </Sheet>
 
-            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.05rem", fontWeight: 600, color: "#0f172a" }}>
-              Tableau de bord
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1rem", fontWeight: 600, color: "#1e1a2e" }}>
+              Espace client
             </span>
           </div>
 
@@ -158,7 +159,7 @@ export default async function VetDashboardLayout({ children }: { children: React
           </span>
         </div>
 
-        <div style={{ flex: 1, padding: 32 }}>{children}</div>
+        <div className="p-5 md:p-8" style={{ flex: 1 }}>{children}</div>
       </main>
     </div>
   )

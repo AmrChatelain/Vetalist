@@ -6,6 +6,13 @@ import { BadgeCheck } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Admin — Badges",
+  robots: { index: false, follow: false },
+};
+
 
 export default async function AdminBadgesPage() {
   const session = await auth()

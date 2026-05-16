@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Connexion",
+  description: "Connectez-vous à votre espace Vetalist.",
+  robots: { index: false, follow: false },
+};
 
 export default function LoginPage() {
   const router = useRouter();

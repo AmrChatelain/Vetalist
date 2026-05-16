@@ -5,6 +5,14 @@ import { VetCard } from "@/components/search/VetCard"
 import { getNextSlotsForVets } from "@/lib/get-next-slot"
 import db from "@/lib/db"
 import { Loader2, SearchX } from "lucide-react"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title:       "Rechercher un vétérinaire",
+  description: "Trouvez un vétérinaire disponible près de chez vous. Filtrez par spécialité, ville, langue et disponibilité.",
+  alternates:  { canonical: "https://vetalist.fr/search" },
+  robots:      { index: true, follow: true },
+}
 
 interface SearchPageProps {
   searchParams: Promise<{
