@@ -24,19 +24,20 @@ export default auth((req) => {
   const isGenericDashboard = path === "/dashboard";
 
   // ─── UNAUTHENTICATED ──────────────────────────────────────────────────────
-  if (!isLoggedIn) {
-    const isBookingRoute = path.startsWith("/book");
+  
+if (!isLoggedIn) {
+  const isBookingRoute = path.startsWith("/book")
 
-    if (
-      isDashboardRoute ||
-      isOnboardingRoute ||
-      isPendingApprovalRoute ||
-      isBookingRoute
-    ) {
-      return Response.redirect(new URL(`/login?callbackUrl=${path}`, nextUrl));
-    }
-    return undefined;
+  if (
+    isDashboardRoute ||
+    isOnboardingRoute ||
+    isPendingApprovalRoute ||
+    isBookingRoute
+  ) {
+    return Response.redirect(new URL(`/login?callbackUrl=${path}`, nextUrl))
   }
+  return undefined
+}
 
   // ─── AUTHENTICATED ────────────────────────────────────────────────────────
 

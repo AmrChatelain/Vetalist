@@ -2,12 +2,6 @@
 
 import { useState } from "react"
 import { requestPasswordReset } from "@/actions/password-reset"
-import type { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title:  "Mot de passe oublié",
-  robots: { index: false, follow: false },
-}
 
 export default function ForgotPasswordPage() {
   const [email, setEmail]     = useState("")

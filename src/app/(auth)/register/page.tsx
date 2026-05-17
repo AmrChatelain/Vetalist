@@ -4,13 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerAction } from "./actions";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Créer un compte",
-  description: "Créez votre compte Vetalist gratuit en quelques secondes.",
-  robots: { index: false, follow: false },
-};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -536,9 +530,9 @@ export default function RegisterPage() {
                 Vet<span>alist</span>
               </div>
             </div>
-            <h1 className="reg-title">Create your account</h1>
+            <h1 className="reg-title">Créer votre compte</h1>
             <p className="reg-subtitle">
-              Join Vetalist and care for your furry family
+              Rejoignez Vetalist et prenez soin de vos animaux
             </p>
           </div>
 
@@ -560,7 +554,7 @@ export default function RegisterPage() {
               >
                 <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
               </svg>
-              I&apos;m a Client
+              Je suis client(e)
             </button>
             <button
               type="button"
@@ -579,7 +573,7 @@ export default function RegisterPage() {
               >
                 <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z" />
               </svg>
-              I&apos;m a Vet
+              Je suis vétérinaire
             </button>
           </div>
 
@@ -606,23 +600,23 @@ export default function RegisterPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continue with Google
+            Continuer avec Google
           </button>
 
           <div className="divider">
             <div className="divider-line" />
-            <span className="divider-text">or</span>
+            <span className="divider-text">ou</span>
             <div className="divider-line" />
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-grid">
               <div>
-                <label className="field-label">First Name</label>
+                <label className="field-label">Prénom</label>
                 <input
                   name="firstName"
                   required
-                  placeholder="Jane"
+                  placeholder="Lily"
                   className={`field-input ${fieldErrors.firstName ? "has-error" : ""}`}
                 />
                 {fieldErrors.firstName && (
@@ -630,11 +624,11 @@ export default function RegisterPage() {
                 )}
               </div>
               <div>
-                <label className="field-label">Last Name</label>
+                <label className="field-label">Nom</label>
                 <input
                   name="lastName"
                   required
-                  placeholder="Doe"
+                  placeholder="Chatelain"
                   className={`field-input ${fieldErrors.lastName ? "has-error" : ""}`}
                 />
                 {fieldErrors.lastName && (
@@ -644,12 +638,12 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-field">
-              <label className="field-label">Email</label>
+              <label className="field-label">Adresse e-mail</label>
               <input
                 name="email"
                 type="email"
                 required
-                placeholder="you@example.com"
+                placeholder="vous@exemple.fr"
                 autoComplete="email"
                 className={`field-input ${fieldErrors.email ? "has-error" : ""}`}
               />
@@ -659,7 +653,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-field">
-              <label className="field-label">Password</label>
+              <label className="field-label">Mot de passe</label>
               <input
                 name="password"
                 type="password"
@@ -741,7 +735,7 @@ export default function RegisterPage() {
                 <div className="btn-body">
                   <div className="btn-shine" />
                   <div className="btn-text">
-                    <span className="btn-label">Join now</span>
+                    <span className="btn-label">Rejoindre</span>
                     <span className="btn-main">
                       {loading ? (
                         <>
@@ -774,7 +768,7 @@ export default function RegisterPage() {
           </form>
 
           <p className="signin-link">
-            Already have an account? <a href="/login">Sign in</a>
+            Déjà un compte ? <a href="/login">Se connecter</a>
           </p>
         </div>
       </div>

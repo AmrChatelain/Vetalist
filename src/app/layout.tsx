@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Figtree } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import { CookieBanner } from "@/components/CookieBanner"
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   icons: {
     icon:  "/favicon.ico",
     apple: "/apple-touch-icon.png",
-    other: [{ rel: "icon", url: "/Vitalist-logo.png" }],
+    other: [{ rel: "icon", url: "/Vetalist-logo.png" }],
   },
   manifest: "/site.webmanifest",
   openGraph: {
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
     url:         "https://vetalist.fr",
     siteName:    "Vetalist",
     images: [{
-      url:    "/Vitalist-logo.png",
+      url:    "/Vetalist-logo.png",
       width:  1200,
       height: 630,
       alt:    "Vetalist — Plateforme de rendez-vous vétérinaires",
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
     card:        "summary_large_image",
     title:       "Vetalist — Trouvez un vétérinaire de confiance en France",
     description: "Prenez rendez-vous avec un vétérinaire de confiance en quelques secondes.",
-    images:      ["/Vitalist-logo.png"],
+    images:      ["/Vetalist-logo.png"],
   },
   alternates: {
     canonical: "https://vetalist.fr",
@@ -88,6 +89,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
          <Toaster richColors position="top-right" />
+         <CookieBanner />
       </body>
     </html>
   );

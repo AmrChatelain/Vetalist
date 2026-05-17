@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Connexion",
-  description: "Connectez-vous à votre espace Vetalist.",
-  robots: { index: false, follow: false },
-};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +29,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res?.error) {
-      setError("Invalid email or password");
+      setError("Email ou mot de passe incorrect");
       return;
     }
 
@@ -394,12 +388,12 @@ export default function LoginPage() {
                 </svg>
               </div>
               <div className="logo-text">
-                Veta<span>List</span>
+                Veta<span>list</span>
               </div>
             </div>
-            <h1 className="login-title">Welcome back 🐾</h1>
+            <h1 className="login-title">Bon retour 🐾</h1>
             <p className="login-subtitle">
-              Sign in to access your pet&apos;s care portal
+              Connectez-vous à votre espace Vetalist
             </p>
           </div>
 
@@ -427,19 +421,19 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continue with Google
+            Continuer avec Google
           </button>
 
           <div className="divider">
             <div className="divider-line" />
-            <span className="divider-text">or</span>
+            <span className="divider-text">ou</span>
             <div className="divider-line" />
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-field">
               <label className="field-label" htmlFor="email">
-                Email
+                Adresse e-mail
               </label>
               <input
                 className="field-input"
@@ -447,13 +441,13 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                placeholder="you@example.com"
+                placeholder="vous@exemple.fr"
                 autoComplete="email"
               />
             </div>
             <div className="form-field">
               <label className="field-label" htmlFor="password">
-                Password
+                Mot de passe
               </label>
               <input
                 className="field-input"
@@ -465,7 +459,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
               <div className="forgot-link">
-                <a href="/forgot-password">Forgot password?</a>
+                <a href="/forgot-password">Mot de passe oublié ?</a>
               </div>
             </div>
 
@@ -534,7 +528,7 @@ export default function LoginPage() {
                 <div className="btn-body">
                   <div className="btn-shine" />
                   <div className="btn-text">
-                    <span className="btn-label">Sign in</span>
+                    <span className="btn-label">Connexion</span>
                     <span className="btn-main">
                       {loading ? (
                         <>
@@ -567,7 +561,7 @@ export default function LoginPage() {
           </form>
 
           <p className="register-link">
-            New here? <a href="/register">Create an account</a>
+            New here? <a href="/register">Créer un compte</a>
           </p>
         </div>
       </div>
