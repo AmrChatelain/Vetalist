@@ -148,7 +148,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                   </div>
 
                   {/* Emergency badge */}
-                  {(vet as any).acceptsEmergencies && (
+                  {vet.acceptsEmergencies &&  (
                     <Badge variant="outline" className="text-rose-600 border-rose-200 bg-rose-50 gap-1">
                       <Siren size={12} /> Accepte les urgences
                     </Badge>

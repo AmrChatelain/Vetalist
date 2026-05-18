@@ -561,7 +561,7 @@ export default function LoginPage() {
           </form>
 
           <p className="register-link">
-            New here? <a href="/register">Créer un compte</a>
+            Nouveau sur notre site ? <a href="/register">Créer un compte</a>
           </p>
         </div>
       </div>

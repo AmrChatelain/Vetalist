@@ -15,6 +15,8 @@
     "@prisma/client": "^5.22.0",
     "@react-email/components": "^1.0.12",
     "@supabase/ssr": "^0.10.2",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

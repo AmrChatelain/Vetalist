@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import db from "@/lib/db"
 import { z } from "zod"
+import { appointmentsRatelimit } from "@/lib/ratelimit"
 
 const bookingSchema = z.object({
   vetId:       z.string(),
@@ -20,6 +21,26 @@ const bookingSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  // Rate limiting — by IP
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("x-real-ip")
+    ?? "anonymous"
+
+  const { success, limit, remaining } = await appointmentsRatelimit.limit(ip)
+
+  if (!success) {
+    return NextResponse.json(
+      { error: "Trop de demandes. Veuillez patienter quelques instants." },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit":     limit.toString(),
+          "X-RateLimit-Remaining": remaining.toString(),
+        },
+      }
+    )
+  }
+
   const session = await auth()
 
   if (!session?.user?.id) {
@@ -41,7 +62,6 @@ export async function POST(req: NextRequest) {
 
   const { vetId, petId, startTime, reason, notes, isEmergency, newPet } = parsed.data
 
-  // Fetch vet with all fields needed for email template
   const vet = await db.vetProfile.findUnique({
     where:  { id: vetId, status: "ACTIVE", isActive: true },
     select: {
@@ -61,7 +81,6 @@ export async function POST(req: NextRequest) {
   const start = new Date(startTime)
   const end   = new Date(start.getTime() + vet.slotDurationMin * 60_000)
 
-  // Race condition guard — double-check slot is still free at write time
   const conflict = await db.appointment.findFirst({
     where: {
       vetId,
@@ -77,7 +96,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Fetch client
   const client = await db.user.findUnique({
     where:  { id: session.user.id },
     select: { id: true, email: true, firstName: true, lastName: true },
@@ -86,7 +104,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 })
   }
 
-  // Resolve pet: use existing or create new inline
   let resolvedPetId: string | null = petId ?? null
   let snapshot: {
     snapshotPetName?:      string
@@ -130,9 +147,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Create appointment — status starts as PENDING
-  // ✉️  No email sent here. The "confirmationEmail" template says "Rendez-vous confirmé !"
-  //     and fires from the vet's confirmAppointment action when they click Confirm.
   const appointment = await db.appointment.create({
     data: {
       vetId,
