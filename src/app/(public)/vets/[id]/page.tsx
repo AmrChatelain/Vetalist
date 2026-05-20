@@ -119,7 +119,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
             {/* Header card */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               {/* Banner */}
-              <div className="h-24 bg-gradient-to-r from-violet-500 to-purple-600" />
+              <div className="h-24 bg-linear-to-r from-violet-500 to-purple-600" />
 
               <div className="px-6 pb-6">
                 {/* Avatar */}
@@ -309,7 +309,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               {isLoggedIn ? (
                 <Button
                   asChild
-                  className="w-full bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
+                  className="w-full bg-linear-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
                 >
                   <Link href={`/book/${vet.id}`}>
                     Prendre rendez-vous
@@ -320,7 +320,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                 <div className="space-y-2">
                   <Button
                     asChild
-                    className="w-full bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
+                    className="w-full bg-linear-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
                   >
                     <Link href={`/login?callbackUrl=/vets/${vet.id}`}>
                       Se connecter pour réserver
@@ -347,13 +347,13 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               <h2 className="text-sm font-bold text-slate-700">Contact & adresse</h2>
 
               <div className="flex items-start gap-2.5 text-sm text-slate-600">
-                <MapPin size={14} className="text-slate-400 flex-shrink-0 mt-0.5" />
+                <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" />
                 <span>{vet.street},<br/>{vet.zipCode} {vet.city}</span>
               </div>
 
               {vet.clinicPhone && (
                 <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                  <Phone size={14} className="text-slate-400 flex-shrink-0" />
+                  <Phone size={14} className="text-slate-400 shrink-0" />
                   <a
                     href={`tel:${vet.clinicPhone}`}
                     className="hover:text-violet-600 transition-colors"
@@ -364,7 +364,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               )}
 
               <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                <Clock size={14} className="text-slate-400 flex-shrink-0" />
+                <Clock size={14} className="text-slate-400 shrink-0" />
                 <span>Durée des RDV : {vet.slotDurationMin} minutes</span>
               </div>
             </div>

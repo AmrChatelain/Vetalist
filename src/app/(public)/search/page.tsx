@@ -182,7 +182,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         <div className="flex gap-6 items-start">
           {/* Filters sidebar */}
-          <div className="w-72 flex-shrink-0 hidden lg:block">
+<div className="w-72 shrink-0 hidden lg:block">
             <Suspense fallback={null}>
               <SearchFilters />
             </Suspense>

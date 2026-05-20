@@ -13,14 +13,25 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
 
-  function handleGoogleSignIn() {
-    // Set a short-lived cookie with the selected role BEFORE redirecting to Google.
-    // Because Google OAuth is a full-page redirect, React state is lost.
-    // The cookie survives the redirect and is readable in the NextAuth signIn
-    // callback on the server when Google redirects back to our app.
-    document.cookie = `pending_role=${role}; path=/; max-age=300; SameSite=Lax`;
-    signIn("google", { callbackUrl: "/dashboard" });
+  async function handleGoogleSignIn() {
+  try {
+    // Get a server-signed intent token — client never sees the actual role
+    const res = await fetch("/api/auth/oauth-intent", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ role }),
+    })
+    const { token } = await res.json()
+
+    // Store only the opaque token in the cookie — not the role itself
+    document.cookie = `pending_role_token=${token}; path=/; max-age=300; SameSite=Lax`
+    signIn("google", { callbackUrl: "/dashboard" })
+  } catch {
+    // Fallback to CLIENT if something goes wrong — never VET
+    document.cookie = `pending_role_token=; path=/; max-age=0`
+    signIn("google", { callbackUrl: "/dashboard" })
   }
+}
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

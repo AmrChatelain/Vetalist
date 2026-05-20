@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    // Always shows success — never reveals if email exists (security best practice)
+    // Always shows success — never reveals if email exists (security)
     await requestPasswordReset(email)
     setSent(true)
     setLoading(false)
