@@ -1,67 +1,77 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import { validateResetToken, resetPassword } from "@/actions/password-reset"
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { validateResetToken, resetPassword } from "@/actions/password-reset";
 
 function getStrength(pwd: string) {
-  if (pwd.length >= 12 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^a-zA-Z0-9]/.test(pwd))
-    return { w: "100%", color: "#22c55e", label: "Fort 💪" }
+  if (
+    pwd.length >= 12 &&
+    /[A-Z]/.test(pwd) &&
+    /[0-9]/.test(pwd) &&
+    /[^a-zA-Z0-9]/.test(pwd)
+  )
+    return { w: "100%", color: "#22c55e", label: "Fort 💪" };
   if (pwd.length >= 8 && (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd)))
-    return { w: "60%", color: "#f59e0b", label: "Moyen" }
-  return { w: "25%", color: "#ef4444", label: "Trop faible" }
+    return { w: "60%", color: "#f59e0b", label: "Moyen" };
+  return { w: "25%", color: "#ef4444", label: "Trop faible" };
 }
 
-type State = "loading" | "invalid" | "ready" | "done"
+type State = "loading" | "invalid" | "ready" | "done";
 
 export default function ResetPasswordPage() {
-  const searchParams  = useSearchParams()
-  const router        = useRouter()
-  const token         = searchParams.get("token") ?? ""
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token") ?? "";
 
-  const [state, setState]     = useState<State>("loading")
-  const [firstName, setFirstName] = useState("")
-  const [password, setPassword]   = useState("")
-  const [confirm, setConfirm]     = useState("")
-  const [error, setError]         = useState("")
-  const [loading, setLoading]     = useState(false)
+  const [state, setState] = useState<State>("loading");
+  const [firstName, setFirstName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Validate token on page load
   useEffect(() => {
-    if (!token) { setState("invalid"); return }
+    if (!token) {
+      setState("invalid");
+      return;
+    }
 
     validateResetToken(token).then((res) => {
       if (res.valid) {
-        setFirstName(res.firstName ?? "")
-        setState("ready")
+        setFirstName(res.firstName ?? "");
+        setState("ready");
+        // Remove token from URL immediately — prevents browser history leakage
+        window.history.replaceState({}, "", "/reset-password");
       } else {
-        setState("invalid")
+        setState("invalid");
       }
-    })
-  }, [token])
+    });
+  }, [token]);
 
   async function handleReset(e: React.FormEvent) {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (password !== confirm) {
-      setError("Les mots de passe ne correspondent pas.")
-      return
+      setError("Les mots de passe ne correspondent pas.");
+      return;
     }
     if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères.")
-      return
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
     }
 
-    setLoading(true)
-    const res = await resetPassword(token, password)
-    setLoading(false)
+    setLoading(true);
+    const res = await resetPassword(token, password);
+    setLoading(false);
 
     if (res.success) {
-      setState("done")
-      setTimeout(() => router.push("/login"), 3000)
+      setState("done");
+      setTimeout(() => router.push("/login"), 3000);
     } else {
-      setError(res.error ?? "Une erreur est survenue.")
+      setError(res.error ?? "Une erreur est survenue.");
     }
   }
 
@@ -201,7 +211,9 @@ export default function ResetPasswordPage() {
       `}</style>
 
       <div className="rp-root">
-        <div className="blob blob-1"/><div className="blob blob-2"/><div className="blob blob-3"/>
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="blob blob-3" />
         <div className="paw-bg paw-1">🐾</div>
         <div className="paw-bg paw-2">🐾</div>
         <div className="paw-bg paw-3">🐾</div>
@@ -211,14 +223,17 @@ export default function ResetPasswordPage() {
             <div className="logo-area">
               <div className="logo-icon">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
-                  <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z"/>
+                  <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z" />
                 </svg>
               </div>
-              <div className="logo-text">Veta<span>List</span></div>
+              <div className="logo-text">
+                Veta<span>List</span>
+              </div>
             </div>
             <h1 className="rp-title">Nouveau mot de passe 🔐</h1>
             <p className="rp-subtitle">
-              {firstName ? `Bonjour ${firstName} !` : "Presque là —"} Choisissez un mot de passe sécurisé.
+              {firstName ? `Bonjour ${firstName} !` : "Presque là —"} Choisissez
+              un mot de passe sécurisé.
             </p>
           </div>
 
@@ -226,7 +241,9 @@ export default function ResetPasswordPage() {
           {state === "loading" && (
             <div className="state-center">
               <div className="loading-dots">
-                <div className="loading-dot-lg"/><div className="loading-dot-lg"/><div className="loading-dot-lg"/>
+                <div className="loading-dot-lg" />
+                <div className="loading-dot-lg" />
+                <div className="loading-dot-lg" />
               </div>
               <p className="rp-subtitle">Vérification du lien...</p>
             </div>
@@ -238,7 +255,8 @@ export default function ResetPasswordPage() {
               <span className="state-icon">🔗</span>
               <p className="state-title">Lien invalide ou expiré</p>
               <p className="state-text">
-                Les liens de réinitialisation expirent après 15 minutes.<br/>
+                Les liens de réinitialisation expirent après 15 minutes.
+                <br />
                 Faites une nouvelle demande et réessayez.
               </p>
               <a href="/forgot-password" className="retry-btn">
@@ -253,9 +271,13 @@ export default function ResetPasswordPage() {
               <span className="state-icon">🎉</span>
               <p className="state-title">Mot de passe mis à jour !</p>
               <p className="state-text">
-                C'est bon. Les chats approuvent.<br/>Bienvenue de retour sur Vetalist.
+                C'est bon. Les chats approuvent.
+                <br />
+                Bienvenue de retour sur Vetalist.
               </p>
-              <p className="redirect-note">Redirection vers la connexion dans quelques instants...</p>
+              <p className="redirect-note">
+                Redirection vers la connexion dans quelques instants...
+              </p>
             </div>
           )}
 
@@ -263,7 +285,9 @@ export default function ResetPasswordPage() {
           {state === "ready" && (
             <form onSubmit={handleReset}>
               <div className="form-field">
-                <label className="field-label" htmlFor="password">Nouveau mot de passe</label>
+                <label className="field-label" htmlFor="password">
+                  Nouveau mot de passe
+                </label>
                 <input
                   className={`field-input ${error ? "error" : ""}`}
                   id="password"
@@ -275,21 +299,32 @@ export default function ResetPasswordPage() {
                   minLength={8}
                   autoComplete="new-password"
                 />
-                {password.length > 0 && (() => {
-                  const s = getStrength(password)
-                  return (
-                    <>
-                      <div className="strength-bar">
-                        <div className="strength-fill" style={{ width: s.w, background: s.color }}/>
-                      </div>
-                      <p className="strength-label" style={{ color: s.color }}>{s.label}</p>
-                    </>
-                  )
-                })()}
+                {password.length > 0 &&
+                  (() => {
+                    const s = getStrength(password);
+                    return (
+                      <>
+                        <div className="strength-bar">
+                          <div
+                            className="strength-fill"
+                            style={{ width: s.w, background: s.color }}
+                          />
+                        </div>
+                        <p
+                          className="strength-label"
+                          style={{ color: s.color }}
+                        >
+                          {s.label}
+                        </p>
+                      </>
+                    );
+                  })()}
               </div>
 
               <div className="form-field">
-                <label className="field-label" htmlFor="confirm">Confirmer le mot de passe</label>
+                <label className="field-label" htmlFor="confirm">
+                  Confirmer le mot de passe
+                </label>
                 <input
                   className={`field-input ${confirm.length > 0 && password !== confirm ? "error" : ""}`}
                   id="confirm"
@@ -312,46 +347,113 @@ export default function ResetPasswordPage() {
                   <div className="particle p3">✨</div>
 
                   <svg className="cat-orange" viewBox="0 0 50 50">
-                    <path className="tail" d="M8 42C2 35 2 20 8 15" stroke="#fcd34d" strokeWidth={4} strokeLinecap="round" fill="none"/>
-                    <path d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45" fill="#fbbf24"/>
-                    <path d="M15 18L8 5L22 15Z" fill="#fbbf24"/><path d="M15 18L11 9L19 15Z" fill="#fda4af"/>
-                    <path d="M35 18L42 5L28 15Z" fill="#fbbf24"/><path d="M35 18L39 9L31 15Z" fill="#fda4af"/>
-                    <circle cx={20} cy={28} r={3} fill="white"/><circle cx={20} cy={28} r="1.5" fill="#334155"/>
-                    <circle cx={30} cy={28} r={3} fill="white"/><circle cx={30} cy={28} r="1.5" fill="#334155"/>
-                    <circle cx={16} cy={34} r={2} fill="#fda4af" opacity="0.6"/>
-                    <circle cx={34} cy={34} r={2} fill="#fda4af" opacity="0.6"/>
-                    <circle cx={21} cy={27} r="0.7" fill="white" opacity="0.8"/>
-                    <circle cx={31} cy={27} r="0.7" fill="white" opacity="0.8"/>
+                    <path
+                      className="tail"
+                      d="M8 42C2 35 2 20 8 15"
+                      stroke="#fcd34d"
+                      strokeWidth={4}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    <path
+                      d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45"
+                      fill="#fbbf24"
+                    />
+                    <path d="M15 18L8 5L22 15Z" fill="#fbbf24" />
+                    <path d="M15 18L11 9L19 15Z" fill="#fda4af" />
+                    <path d="M35 18L42 5L28 15Z" fill="#fbbf24" />
+                    <path d="M35 18L39 9L31 15Z" fill="#fda4af" />
+                    <circle cx={20} cy={28} r={3} fill="white" />
+                    <circle cx={20} cy={28} r="1.5" fill="#334155" />
+                    <circle cx={30} cy={28} r={3} fill="white" />
+                    <circle cx={30} cy={28} r="1.5" fill="#334155" />
+                    <circle
+                      cx={16}
+                      cy={34}
+                      r={2}
+                      fill="#fda4af"
+                      opacity="0.6"
+                    />
+                    <circle
+                      cx={34}
+                      cy={34}
+                      r={2}
+                      fill="#fda4af"
+                      opacity="0.6"
+                    />
+                    <circle
+                      cx={21}
+                      cy={27}
+                      r="0.7"
+                      fill="white"
+                      opacity="0.8"
+                    />
+                    <circle
+                      cx={31}
+                      cy={27}
+                      r="0.7"
+                      fill="white"
+                      opacity="0.8"
+                    />
                   </svg>
 
                   <svg className="cat-cream" viewBox="0 0 50 50">
-                    <path d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45" fill="#fef3c7"/>
-                    <path d="M15 18L8 8L22 15Z" fill="#fef3c7"/><path d="M35 18L42 8L28 15Z" fill="#fef3c7"/>
+                    <path
+                      d="M10 45C10 30 15 15 25 15C35 15 40 30 40 45"
+                      fill="#fef3c7"
+                    />
+                    <path d="M15 18L8 8L22 15Z" fill="#fef3c7" />
+                    <path d="M35 18L42 8L28 15Z" fill="#fef3c7" />
                     <g className="cream-eyes">
-                      <circle cx={20} cy={28} r="1.8" fill="#92400e"/>
-                      <circle cx={30} cy={28} r="1.8" fill="#92400e"/>
+                      <circle cx={20} cy={28} r="1.8" fill="#92400e" />
+                      <circle cx={30} cy={28} r="1.8" fill="#92400e" />
                     </g>
-                    <circle cx={15} cy={33} r="2.5" fill="#fecaca" opacity="0.5"/>
-                    <circle cx={35} cy={33} r="2.5" fill="#fecaca" opacity="0.5"/>
+                    <circle
+                      cx={15}
+                      cy={33}
+                      r="2.5"
+                      fill="#fecaca"
+                      opacity="0.5"
+                    />
+                    <circle
+                      cx={35}
+                      cy={33}
+                      r="2.5"
+                      fill="#fecaca"
+                      opacity="0.5"
+                    />
                   </svg>
 
                   <div className="btn-body">
-                    <div className="btn-shine"/>
+                    <div className="btn-shine" />
                     <div className="btn-text">
                       <span className="btn-label">Confirmer</span>
                       <span className="btn-main">
-                        {loading
-                          ? (<><span className="loading-dot"/><span className="loading-dot"/><span className="loading-dot"/></>)
-                          : "Sauvegarder"}
+                        {loading ? (
+                          <>
+                            <span className="loading-dot" />
+                            <span className="loading-dot" />
+                            <span className="loading-dot" />
+                          </>
+                        ) : (
+                          "Sauvegarder"
+                        )}
                       </span>
                     </div>
                     <div className="btn-paw">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="#c4b5fd">
-                        <circle cx={12} cy={16} r="3.5"/><circle cx={8} cy={11} r={2}/>
-                        <circle cx={12} cy={8} r={2}/><circle cx={16} cy={11} r={2}/>
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="#c4b5fd"
+                      >
+                        <circle cx={12} cy={16} r="3.5" />
+                        <circle cx={8} cy={11} r={2} />
+                        <circle cx={12} cy={8} r={2} />
+                        <circle cx={16} cy={11} r={2} />
                       </svg>
                     </div>
-                    <div className="btn-glow"/>
+                    <div className="btn-glow" />
                   </div>
                 </button>
               </div>
@@ -364,5 +466,5 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </>
-  )
+  );
 }

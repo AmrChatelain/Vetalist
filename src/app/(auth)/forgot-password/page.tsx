@@ -201,7 +201,7 @@ export default function ForgotPasswordPage() {
                   <path d="M4.5 11c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm11 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-5.5-4c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm-3 14c0-3.3 2.7-6 6-6s6 2.7 6 6H7z"/>
                 </svg>
               </div>
-              <div className="logo-text">Veta<span>List</span></div>
+              <div className="logo-text">Veta<span>list</span></div>
             </div>
             <h1 className="fp-title">Mot de passe oublié ?</h1>
             <p className="fp-subtitle">

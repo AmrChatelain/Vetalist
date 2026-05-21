@@ -151,6 +151,7 @@ enum EmailType {
   REMINDER_1H
   CANCELLATION
   FORGOT_PASSWORD
+  NEW_BOOKING
 }
 
 enum VetStatus {

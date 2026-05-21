@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { registerAction } from "./actions";
 
-
 export default function RegisterPage() {
   const router = useRouter();
   const [role, setRole] = useState<"CLIENT" | "VET">("CLIENT");
@@ -14,24 +13,24 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleGoogleSignIn() {
-  try {
-    // Get a server-signed intent token — client never sees the actual role
-    const res = await fetch("/api/auth/oauth-intent", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ role }),
-    })
-    const { token } = await res.json()
+    try {
+      // Get a server-signed intent token — client never sees the actual role
+      const res = await fetch("/api/auth/oauth-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      const { token } = await res.json();
 
-    // Store only the opaque token in the cookie — not the role itself
-    document.cookie = `pending_role_token=${token}; path=/; max-age=300; SameSite=Lax`
-    signIn("google", { callbackUrl: "/dashboard" })
-  } catch {
-    // Fallback to CLIENT if something goes wrong — never VET
-    document.cookie = `pending_role_token=; path=/; max-age=0`
-    signIn("google", { callbackUrl: "/dashboard" })
+      // Store only the opaque token in the cookie — not the role itself
+      document.cookie = `pending_role_token=${token}; path=/; max-age=300; SameSite=Lax`;
+      signIn("google", { callbackUrl: "/dashboard" });
+    } catch {
+      // Fallback to CLIENT if something goes wrong — never VET
+      document.cookie = `pending_role_token=; path=/; max-age=0`;
+      signIn("google", { callbackUrl: "/dashboard" });
+    }
   }
-}
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,7 +42,7 @@ export default function RegisterPage() {
     const formData = new FormData(form);
     formData.set("role", role);
 
-    const result = await registerAction(formData);
+    const result = (await registerAction(formData)) as any;
     setLoading(false);
 
     if (result.errors) {

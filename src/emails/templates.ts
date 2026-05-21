@@ -53,7 +53,7 @@ function base(content: string): string {
     </tr>
   </table>
 </body>
-</html>`
+</html>`;
 }
 
 function appointmentBlock(data: AppointmentEmailData): string {
@@ -83,11 +83,15 @@ function appointmentBlock(data: AppointmentEmailData): string {
               <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Adresse</td>
               <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.address}</td>
             </tr>
-            ${data.petName ? `
+            ${
+              data.petName
+                ? `
             <tr>
               <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Animal</td>
               <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.petName}</td>
-            </tr>` : ""}
+            </tr>`
+                : ""
+            }
             <tr>
               <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Motif</td>
               <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.reason}</td>
@@ -95,22 +99,25 @@ function appointmentBlock(data: AppointmentEmailData): string {
           </table>
         </td>
       </tr>
-    </table>`
+    </table>`;
 }
 
 export type AppointmentEmailData = {
-  clientFirstName: string
-  vetName:         string
-  clinicName:      string
-  address:         string
-  date:            string
-  time:            string
-  petName?:        string | null
-  reason:          string
-}
+  clientFirstName: string;
+  vetName: string;
+  clinicName: string;
+  address: string;
+  date: string;
+  time: string;
+  petName?: string | null;
+  reason: string;
+};
 
 // ─── 1. Appointment Confirmed (sent when vet clicks Confirm) ──────────────────
-export function confirmationEmail(data: AppointmentEmailData): { subject: string; html: string } {
+export function confirmationEmail(data: AppointmentEmailData): {
+  subject: string;
+  html: string;
+} {
   return {
     subject: `✅ Rendez-vous confirmé — ${data.date} à ${data.time}`,
     html: base(`
@@ -135,16 +142,16 @@ export function confirmationEmail(data: AppointmentEmailData): { subject: string
         <a href="mailto:support@vetalist.com" style="color:#3b82f6;">support@vetalist.com</a>.
       </p>
     `),
-  }
+  };
 }
 
 // ─── 2. Appointment Cancelled by Vet (with optional reason) ──────────────────
 export function cancellationEmail(
   data: AppointmentEmailData,
   cancelledBy: "VET" | "CLIENT",
-  reason?: string | null
+  reason?: string | null,
 ): { subject: string; html: string } {
-  const byVet = cancelledBy === "VET"
+  const byVet = cancelledBy === "VET";
   return {
     subject: `❌ Rendez-vous annulé — ${data.date} à ${data.time}`,
     html: base(`
@@ -159,13 +166,17 @@ export function cancellationEmail(
 
       ${appointmentBlock(data)}
 
-      ${reason ? `
+      ${
+        reason
+          ? `
       <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;margin:16px 0;">
         <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.06em;">
           Motif communiqué par le vétérinaire
         </p>
         <p style="margin:0;font-size:13px;color:#7f1d1d;line-height:1.6;">${reason}</p>
-      </div>` : ""}
+      </div>`
+          : ""
+      }
 
       <p style="margin:16px 0 0;font-size:13px;color:#64748b;line-height:1.6;">
         Nous vous présentons nos excuses pour ce désagrément. Vous pouvez
@@ -174,11 +185,14 @@ export function cancellationEmail(
         <a href="mailto:support@vetalist.com" style="color:#3b82f6;">support@vetalist.com</a>.
       </p>
     `),
-  }
+  };
 }
 
 // ─── 3. Reminder 24h before ───────────────────────────────────────────────────
-export function reminder24hEmail(data: AppointmentEmailData): { subject: string; html: string } {
+export function reminder24hEmail(data: AppointmentEmailData): {
+  subject: string;
+  html: string;
+} {
   return {
     subject: `⏰ Rappel : Rendez-vous demain à ${data.time}`,
     html: base(`
@@ -198,11 +212,14 @@ export function reminder24hEmail(data: AppointmentEmailData): { subject: string;
         </p>
       </div>
     `),
-  }
+  };
 }
 
 // ─── 4. Reminder 1h before ────────────────────────────────────────────────────
-export function reminder1hEmail(data: AppointmentEmailData): { subject: string; html: string } {
+export function reminder1hEmail(data: AppointmentEmailData): {
+  subject: string;
+  html: string;
+} {
   return {
     subject: `🔔 Votre rendez-vous est dans 1 heure — ${data.time}`,
     html: base(`
@@ -220,11 +237,14 @@ export function reminder1hEmail(data: AppointmentEmailData): { subject: string; 
         Si vous ne pouvez pas vous y rendre, veuillez contacter la clinique dès que possible.
       </p>
     `),
-  }
+  };
 }
 
 // ─── 5. Vet Approval notification ─────────────────────────────────────────────
-export function vetApprovedEmail(vetFirstName: string): { subject: string; html: string } {
+export function vetApprovedEmail(vetFirstName: string): {
+  subject: string;
+  html: string;
+} {
   return {
     subject: "🎉 Votre profil Vetalist est approuvé !",
     html: base(`
@@ -252,11 +272,14 @@ export function vetApprovedEmail(vetFirstName: string): { subject: string; html:
         </a>
       </div>
     `),
-  }
+  };
 }
 
 // ─── 6. Vet Rejection notification ────────────────────────────────────────────
-export function vetRejectedEmail(vetFirstName: string, reason: string): { subject: string; html: string } {
+export function vetRejectedEmail(
+  vetFirstName: string,
+  reason: string,
+): { subject: string; html: string } {
   return {
     subject: "Mise à jour concernant votre candidature Vetalist",
     html: base(`
@@ -286,13 +309,13 @@ export function vetRejectedEmail(vetFirstName: string, reason: string): { subjec
         </a>
       </div>
     `),
-  }
+  };
 }
 
 // ─── 7. Forgot Password ────────────────────────────────────────────────────────
 export function forgotPasswordEmail(
   firstName: string,
-  resetUrl: string
+  resetUrl: string,
 ): { subject: string; html: string } {
   return {
     subject: "🔐 Réinitialisation de votre mot de passe Vetalist",
@@ -322,5 +345,95 @@ export function forgotPasswordEmail(
         </p>
       </div>
     `),
-  }
+  };
+}
+
+// ─── 8. New Booking Notification (sent to VET when client books) ──────────────
+export type NewBookingEmailData = {
+  vetFirstName: string;
+  clientFirstName: string;
+  clientLastName: string;
+  clinicName: string;
+  address: string;
+  date: string;
+  time: string;
+  petName?: string | null;
+  reason: string;
+  isEmergency: boolean;
+  dashboardUrl: string;
+};
+
+export function newBookingEmail(data: NewBookingEmailData): {
+  subject: string;
+  html: string;
+} {
+  return {
+    subject: `${data.isEmergency ? "🚨 URGENCE —" : "📅"} Nouvelle demande de RDV — ${data.date} à ${data.time}`,
+    html: base(`
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="width:56px;height:56px;background:${data.isEmergency ? "#fef2f2" : "#eff6ff"};border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;">
+          ${data.isEmergency ? "🚨" : "📅"}
+        </div>
+        <h1 style="margin:0;font-size:1.3rem;font-weight:700;color:#0f172a;">
+          ${data.isEmergency ? "Demande urgente !" : "Nouvelle demande de rendez-vous"}
+        </h1>
+        <p style="margin:8px 0 0;font-size:14px;color:#64748b;">
+          Bonjour Dr. ${data.vetFirstName}, ${data.clientFirstName} ${data.clientLastName} souhaite prendre rendez-vous.
+        </p>
+      </div>
+
+      <table width="100%" cellpadding="0" cellspacing="0"
+        style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:20px 0;">
+        <tr><td>
+          <table width="100%" cellpadding="4" cellspacing="0">
+            <tr>
+              <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;width:100px;">Client</td>
+              <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.clientFirstName} ${data.clientLastName}</td>
+            </tr>
+            <tr>
+              <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Date</td>
+              <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.date}</td>
+            </tr>
+            <tr>
+              <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Heure</td>
+              <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.time}</td>
+            </tr>
+            ${
+              data.petName
+                ? `
+            <tr>
+              <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Animal</td>
+              <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.petName}</td>
+            </tr>`
+                : ""
+            }
+            <tr>
+              <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Motif</td>
+              <td style="font-size:13px;color:#1e293b;font-weight:500;">${data.reason}</td>
+            </tr>
+            ${
+              data.isEmergency
+                ? `
+            <tr>
+              <td style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Type</td>
+              <td style="font-size:13px;color:#dc2626;font-weight:700;">🚨 URGENCE</td>
+            </tr>`
+                : ""
+            }
+          </table>
+        </td></tr>
+      </table>
+
+      <div style="text-align:center;margin-top:20px;">
+        <a href="${data.dashboardUrl}"
+          style="display:inline-block;background:#1d4ed8;color:white;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+          Confirmer ou refuser →
+        </a>
+      </div>
+
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
+        Connectez-vous à votre tableau de bord pour gérer ce rendez-vous.
+      </p>
+    `),
+  };
 }

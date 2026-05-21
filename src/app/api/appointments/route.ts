@@ -1,32 +1,38 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import db from "@/lib/db"
-import { z } from "zod"
-import { appointmentsRatelimit } from "@/lib/ratelimit"
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import db from "@/lib/db";
+import { z } from "zod";
+import { appointmentsRatelimit } from "@/lib/ratelimit";
+import { newBookingEmail } from "@/emails/templates";
+import { sendEmail } from "@/lib/email";
 
 const bookingSchema = z.object({
-  vetId:       z.string(),
-  petId:       z.string().nullable().optional(),
-  startTime:   z.string().datetime(),
-  reason:      z.string().min(5, "Motif trop court").max(500),
-  notes:       z.string().max(500).optional(),
+  vetId: z.string(),
+  petId: z.string().nullable().optional(),
+  startTime: z.string().datetime(),
+  reason: z.string().min(5, "Motif trop court").max(500),
+  notes: z.string().max(500).optional(),
   isEmergency: z.boolean().default(false),
-  newPet: z.object({
-    name:      z.string().min(1),
-    species:   z.string().min(1),
-    breed:     z.string().optional(),
-    birthDate: z.string().optional().nullable(),
-    gender:    z.enum(["MALE", "FEMALE"]).optional().nullable(),
-  }).nullable().optional(),
-})
+  newPet: z
+    .object({
+      name: z.string().min(1),
+      species: z.string().min(1),
+      breed: z.string().optional(),
+      birthDate: z.string().optional().nullable(),
+      gender: z.enum(["MALE", "FEMALE"]).optional().nullable(),
+    })
+    .nullable()
+    .optional(),
+});
 
 export async function POST(req: NextRequest) {
   // Rate limiting — by IP
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? req.headers.get("x-real-ip")
-    ?? "anonymous"
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "anonymous";
 
-  const { success, limit, remaining } = await appointmentsRatelimit.limit(ip)
+  const { success, limit, remaining } = await appointmentsRatelimit.limit(ip);
 
   if (!success) {
     return NextResponse.json(
@@ -34,137 +40,182 @@ export async function POST(req: NextRequest) {
       {
         status: 429,
         headers: {
-          "X-RateLimit-Limit":     limit.toString(),
+          "X-RateLimit-Limit": limit.toString(),
           "X-RateLimit-Remaining": remaining.toString(),
         },
-      }
-    )
+      },
+    );
   }
 
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 })
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
   if (session.user.role !== "CLIENT") {
-    return NextResponse.json({ error: "Réservé aux clients" }, { status: 403 })
+    return NextResponse.json({ error: "Réservé aux clients" }, { status: 403 });
   }
 
-  const body   = await req.json()
-  const parsed = bookingSchema.safeParse(body)
+  const body = await req.json();
+  const parsed = bookingSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Données invalides", details: parsed.error.flatten() },
-      { status: 400 }
-    )
+      { status: 400 },
+    );
   }
 
-  const { vetId, petId, startTime, reason, notes, isEmergency, newPet } = parsed.data
+  const { vetId, petId, startTime, reason, notes, isEmergency, newPet } =
+    parsed.data;
 
   const vet = await db.vetProfile.findUnique({
-    where:  { id: vetId, status: "ACTIVE", isActive: true },
+    where: { id: vetId, status: "ACTIVE", isActive: true },
     select: {
-      id:              true,
+      id: true,
       slotDurationMin: true,
-      clinicName:      true,
-      street:          true,
-      zipCode:         true,
-      city:            true,
-      user:            { select: { firstName: true, lastName: true, email: true } },
+      clinicName: true,
+      street: true,
+      zipCode: true,
+      city: true,
+      user: { select: { firstName: true, lastName: true, email: true } },
     },
-  })
+  });
   if (!vet) {
-    return NextResponse.json({ error: "Vétérinaire introuvable" }, { status: 404 })
+    return NextResponse.json(
+      { error: "Vétérinaire introuvable" },
+      { status: 404 },
+    );
   }
 
-  const start = new Date(startTime)
-  const end   = new Date(start.getTime() + vet.slotDurationMin * 60_000)
+  const start = new Date(startTime);
+  const end = new Date(start.getTime() + vet.slotDurationMin * 60_000);
 
   const conflict = await db.appointment.findFirst({
     where: {
       vetId,
-      status:    { in: ["PENDING", "CONFIRMED"] },
+      status: { in: ["PENDING", "CONFIRMED"] },
       startTime: { lt: end },
-      endTime:   { gt: start },
+      endTime: { gt: start },
     },
-  })
+  });
   if (conflict) {
     return NextResponse.json(
       { error: "Ce créneau vient d'être pris. Veuillez en choisir un autre." },
-      { status: 409 }
-    )
+      { status: 409 },
+    );
   }
 
   const client = await db.user.findUnique({
-    where:  { id: session.user.id },
+    where: { id: session.user.id },
     select: { id: true, email: true, firstName: true, lastName: true },
-  })
+  });
   if (!client) {
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 })
+    return NextResponse.json(
+      { error: "Utilisateur introuvable" },
+      { status: 404 },
+    );
   }
 
-  let resolvedPetId: string | null = petId ?? null
+  let resolvedPetId: string | null = petId ?? null;
   let snapshot: {
-    snapshotPetName?:      string
-    snapshotPetSpecies?:   string
-    snapshotPetBreed?:     string | null
-    snapshotPetBirthDate?: Date | null
-    snapshotPetGender?:    "MALE" | "FEMALE" | null
-  } = {}
+    snapshotPetName?: string;
+    snapshotPetSpecies?: string;
+    snapshotPetBreed?: string | null;
+    snapshotPetBirthDate?: Date | null;
+    snapshotPetGender?: "MALE" | "FEMALE" | null;
+  } = {};
 
   if (newPet && !petId) {
     const created = await db.pet.create({
       data: {
-        clientId:  client.id,
-        name:      newPet.name,
-        species:   newPet.species,
-        breed:     newPet.breed     ?? null,
+        clientId: client.id,
+        name: newPet.name,
+        species: newPet.species,
+        breed: newPet.breed ?? null,
         birthDate: newPet.birthDate ? new Date(newPet.birthDate) : null,
-        gender:    newPet.gender    ?? null,
+        gender: newPet.gender ?? null,
       },
-    })
-    resolvedPetId = created.id
+    });
+    resolvedPetId = created.id;
     snapshot = {
-      snapshotPetName:      created.name,
-      snapshotPetSpecies:   created.species,
-      snapshotPetBreed:     created.breed,
+      snapshotPetName: created.name,
+      snapshotPetSpecies: created.species,
+      snapshotPetBreed: created.breed,
       snapshotPetBirthDate: created.birthDate,
-      snapshotPetGender:    created.gender,
-    }
+      snapshotPetGender: created.gender,
+    };
   } else if (resolvedPetId) {
     const pet = await db.pet.findUnique({
       where: { id: resolvedPetId, clientId: client.id },
-    })
+    });
     if (pet) {
       snapshot = {
-        snapshotPetName:      pet.name,
-        snapshotPetSpecies:   pet.species,
-        snapshotPetBreed:     pet.breed,
+        snapshotPetName: pet.name,
+        snapshotPetSpecies: pet.species,
+        snapshotPetBreed: pet.breed,
         snapshotPetBirthDate: pet.birthDate,
-        snapshotPetGender:    pet.gender,
-      }
+        snapshotPetGender: pet.gender,
+      };
     }
   }
 
   const appointment = await db.appointment.create({
     data: {
       vetId,
-      clientId:    client.id,
-      petId:       resolvedPetId,
-      startTime:   start,
-      endTime:     end,
+      clientId: client.id,
+      petId: resolvedPetId,
+      startTime: start,
+      endTime: end,
       reason,
-      notes:       notes ?? null,
+      notes: notes ?? null,
       isEmergency,
-      status:      "PENDING",
+      status: "PENDING",
       ...snapshot,
     },
-  })
+  });
 
-  return NextResponse.json({ appointmentId: appointment.id }, { status: 201 })
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://vetalist.fr";
+    const { subject, html } = newBookingEmail({
+      vetFirstName: vet.user.firstName,
+      clientFirstName: client.firstName,
+      clientLastName: client.lastName,
+      clinicName: vet.clinicName ?? "Vetalist",
+      address: `${vet.street}, ${vet.zipCode} ${vet.city}`,
+      date: start.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      time: start.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      petName: snapshot.snapshotPetName ?? null,
+      reason,
+      isEmergency,
+      dashboardUrl: `${appUrl}/dashboard/vet/appointments`,
+    });
+
+    await sendEmail({ to: vet.user.email, subject, html });
+
+    await db.emailLog.create({
+      data: {
+        appointmentId: appointment.id,
+        recipientEmail: vet.user.email,
+        emailType: "NEW_BOOKING",
+      },
+    });
+  } catch (err) {
+    // Email failure never blocks the booking
+    console.error("Vet notification email error:", err);
+  }
+
+  return NextResponse.json({ appointmentId: appointment.id }, { status: 201 });
 }
 
 export async function GET() {
-  return NextResponse.json({ message: "Appointments API" })
+  return NextResponse.json({ message: "Appointments API" });
 }
