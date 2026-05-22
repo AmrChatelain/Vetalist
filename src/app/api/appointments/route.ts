@@ -6,6 +6,16 @@ import { appointmentsRatelimit } from "@/lib/ratelimit";
 import { newBookingEmail } from "@/emails/templates";
 import { sendEmail } from "@/lib/email";
 
+function sanitizeText(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+    .trim();
+}
+
 const bookingSchema = z.object({
   vetId: z.string(),
   petId: z.string().nullable().optional(),
@@ -66,8 +76,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { vetId, petId, startTime, reason, notes, isEmergency, newPet } =
-    parsed.data;
+  const { vetId, petId, startTime, notes, isEmergency, newPet } = parsed.data;
+  const reason = sanitizeText(parsed.data.reason);
 
   const vet = await db.vetProfile.findUnique({
     where: { id: vetId, status: "ACTIVE", isActive: true },

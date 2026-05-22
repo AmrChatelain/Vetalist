@@ -31,7 +31,7 @@ interface TimeOffManagerProps {
 }
 
 function formatDate(date: Date) {
-  return new Date(date).toLocaleDateString("en-GB", {
+  return new Date(date).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",
     year: "numeric",

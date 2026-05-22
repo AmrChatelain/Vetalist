@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import Link from "next/link"
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 import {
   LayoutDashboard,
   ShieldCheck,
@@ -8,38 +8,61 @@ import {
   Users,
   LogOut,
   Menu,
-} from "lucide-react"
-import { NavLink } from "@/components/dashboard/NavLink"
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { NavLink } from "@/components/dashboard/NavLink";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
-const navItems = [
-  { href: "/dashboard/admin",       label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/dashboard/admin/vets",  label: "Vétérinaires",    icon: ShieldCheck     },
-  { href: "/dashboard/admin/badges",label: "Badges",          icon: BadgeCheck      },
-  { href: "/dashboard/admin/users", label: "Utilisateurs",    icon: Users           },
-]
+const navItems: { href: string; label: string; icon: React.ReactNode }[] = [
+  {
+    href: "/dashboard/admin",
+    label: "Tableau de bord",
+    icon: <LayoutDashboard size={16} />,
+  },
+  {
+    href: "/dashboard/admin/vets",
+    label: "Vétérinaires",
+    icon: <ShieldCheck size={16} />,
+  },
+  {
+    href: "/dashboard/admin/badges",
+    label: "Badges",
+    icon: <BadgeCheck size={16} />,
+  },
+  {
+    href: "/dashboard/admin/users",
+    label: "Utilisateurs",
+    icon: <Users size={16} />,
+  },
+];
 
-function SidebarContent({ initials, firstName, lastName }: {
-  initials:  string
-  firstName: string
-  lastName:  string
+function SidebarContent({
+  initials,
+  firstName,
+  lastName,
+}: {
+  initials: string;
+  firstName: string;
+  lastName: string;
 }) {
   return (
     <div className="flex flex-col h-full bg-slate-900">
       {/* Logo */}
       <div className="px-5 py-6 border-b border-slate-800">
-        <Link href="/dashboard/admin" className="flex items-center gap-2.5 no-underline">
+        <Link
+          href="/dashboard/admin"
+          className="flex items-center gap-2.5 no-underline"
+        >
           <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-violet-700 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-900/30">
             A
           </div>
           <div>
-            <div className="text-white font-bold text-sm leading-none">Vetalist</div>
-            <div className="text-violet-400 text-xs mt-0.5 font-medium">Portail Admin</div>
+            <div className="text-white font-bold text-sm leading-none">
+              Vetalist
+            </div>
+            <div className="text-violet-400 text-xs mt-0.5 font-medium">
+              Portail Admin
+            </div>
           </div>
         </Link>
       </div>
@@ -50,7 +73,12 @@ function SidebarContent({ initials, firstName, lastName }: {
           Gestion
         </p>
         {navItems.map((item) => (
-          <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
+          <NavLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+          />
         ))}
       </nav>
 
@@ -69,9 +97,9 @@ function SidebarContent({ initials, firstName, lastName }: {
         </div>
         <form
           action={async () => {
-            "use server"
-            const { signOut } = await import("@/lib/auth")
-            await signOut({ redirectTo: "/login" })
+            "use server";
+            const { signOut } = await import("@/lib/auth");
+            await signOut({ redirectTo: "/login" });
           }}
         >
           <button
@@ -84,35 +112,36 @@ function SidebarContent({ initials, firstName, lastName }: {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 export default async function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await auth()
-  if (!session?.user || session.user.role !== "ADMIN") redirect("/login")
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") redirect("/login");
 
-  const firstName = session.user.firstName || "Admin"
-  const lastName  = session.user.lastName  || ""
-  const initials  = `${firstName[0]}${lastName[0] || ""}`.toUpperCase()
+  const firstName = session.user.firstName || "Admin";
+  const lastName = session.user.lastName || "";
+  const initials = `${firstName[0]}${lastName[0] || ""}`.toUpperCase();
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-
       {/* Desktop sidebar */}
       <aside className="w-60 min-h-screen hidden md:flex flex-col fixed top-0 left-0 bottom-0 z-50 border-r border-slate-800">
-        <SidebarContent initials={initials} firstName={firstName} lastName={lastName} />
+        <SidebarContent
+          initials={initials}
+          firstName={firstName}
+          lastName={lastName}
+        />
       </aside>
 
       {/* Main content */}
       <main className="md:ml-60 flex-1 min-h-screen">
-
         {/* Topbar */}
         <div className="h-14 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-40">
-
           {/* Mobile hamburger */}
           <div className="flex items-center gap-3">
             <Sheet>
@@ -142,9 +171,9 @@ export default async function AdminLayout({
           <span className="text-xs text-slate-400 hidden sm:block">
             {new Date().toLocaleDateString("fr-FR", {
               weekday: "long",
-              day:     "numeric",
-              month:   "long",
-              year:    "numeric",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
             })}
           </span>
         </div>
@@ -152,5 +181,5 @@ export default async function AdminLayout({
         <div className="p-4 md:p-8">{children}</div>
       </main>
     </div>
-  )
+  );
 }

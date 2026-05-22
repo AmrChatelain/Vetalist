@@ -264,7 +264,7 @@ export async function getVetDashboardData() {
       pendingCount: pending.length,
       weekCount: upcomingWeek.length,
       isActive: vet.isActive,
-      acceptsEmergencies: (vet as any).acceptsEmergencies ?? true,
+      acceptsEmergencies: vet.acceptsEmergencies,
     },
     upcomingAppointments: upcoming,
     pastAppointments: past,
