@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       slotDurationMin: true,
       clinicName: true,
       street: true,
+      addressComplement: true,
       zipCode: true,
       city: true,
       user: { select: { firstName: true, lastName: true, email: true } },
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
       clientFirstName: client.firstName,
       clientLastName: client.lastName,
       clinicName: vet.clinicName ?? "Vetalist",
-      address: `${vet.street}, ${vet.zipCode} ${vet.city}`,
+      address: [vet.street, vet.addressComplement, `${vet.zipCode} ${vet.city}`].filter(Boolean).join(", "),
       date: start.toLocaleDateString("fr-FR", {
         weekday: "long",
         day: "numeric",

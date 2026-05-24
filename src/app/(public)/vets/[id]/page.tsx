@@ -7,7 +7,7 @@ import { getNextAvailableSlot } from "@/lib/get-next-slot"
 import {
   MapPin, Phone, Clock, Languages, CreditCard,
   BadgeCheck, Siren, ChevronRight, Star,
-  Stethoscope, CalendarDays, ArrowLeft, User,
+  Stethoscope, CalendarDays, ArrowLeft,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,9 +31,7 @@ export async function generateMetadata(
     },
   })
 
-  if (!vet) {
-    return { title: "Vétérinaire introuvable" }
-  }
+  if (!vet) return { title: "Vétérinaire introuvable" }
 
   const name        = `Dr. ${vet.user.firstName} ${vet.user.lastName}`
   const clinic      = vet.clinicName ? ` — ${vet.clinicName}` : ""
@@ -46,8 +44,7 @@ export async function generateMetadata(
     title,
     description,
     openGraph: {
-      title,
-      description,
+      title, description,
       images: [{ url: image, width: 400, height: 400, alt: name }],
       type:   "profile",
     },
@@ -71,8 +68,21 @@ function formatNextSlot(slot: Date | null) {
   const date = slot.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
 
   if (slot <= todayEnd) return { label: `Aujourd'hui à ${time}`, color: "text-emerald-600" }
-  if (slot <= weekEnd)  return { label: `${date} à ${time}`,    color: "text-blue-600"    }
-  return                       { label: `${date} à ${time}`,    color: "text-slate-600"   }
+  if (slot <= weekEnd)  return { label: `${date} à ${time}`,     color: "text-blue-600"    }
+  return                       { label: `${date} à ${time}`,     color: "text-slate-600"   }
+}
+
+// ── Build a full address string ───────────────────────────────────────────────
+function buildAddress(vet: {
+  street: string
+  addressComplement?: string | null
+  zipCode: string
+  city: string
+}): string {
+  const parts = [vet.street]
+  if (vet.addressComplement) parts.push(vet.addressComplement)
+  parts.push(`${vet.zipCode} ${vet.city}`)
+  return parts.join(", ")
 }
 
 export default async function VetProfilePage({ params }: VetProfilePageProps) {
@@ -92,7 +102,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
   const nextSlot = await getNextAvailableSlot(vet.id)
   const { label: slotLabel, color: slotColor } = formatNextSlot(nextSlot)
 
-  const DAY_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
+  const DAY_NAMES    = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
   const displayPhoto = vet.photoUrl || vet.user.image
   const isLoggedIn   = !!session?.user
 
@@ -118,11 +128,9 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
 
             {/* Header card */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              {/* Banner */}
-              <div className="h-24 bg-linear-to-r from-violet-500 to-purple-600" />
+              <div className="h-24 bg-gradient-to-r from-violet-500 to-purple-600" />
 
               <div className="px-6 pb-6">
-                {/* Avatar */}
                 <div className="flex items-end justify-between -mt-10 mb-4">
                   <div className="relative">
                     <div className="w-20 h-20 rounded-2xl border-4 border-white overflow-hidden bg-violet-100 shadow-sm">
@@ -147,15 +155,13 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                     )}
                   </div>
 
-                  {/* Emergency badge */}
-                  {vet.acceptsEmergencies &&  (
+                  {vet.acceptsEmergencies && (
                     <Badge variant="outline" className="text-rose-600 border-rose-200 bg-rose-50 gap-1">
                       <Siren size={12} /> Accepte les urgences
                     </Badge>
                   )}
                 </div>
 
-                {/* Name & clinic */}
                 <div className="flex items-start gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold text-slate-900 font-['Sora']">
                     Dr. {vet.user.firstName} {vet.user.lastName}
@@ -174,12 +180,22 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                   </p>
                 )}
 
-                <p className="text-sm text-slate-400 flex items-center gap-1.5 mt-0.5">
-                  <MapPin size={13} />
-                  {vet.street}, {vet.zipCode} {vet.city}
-                </p>
+                {/* Address with complement */}
+                <div className="mt-1 text-sm text-slate-400">
+                  <p className="flex items-start gap-1.5">
+                    <MapPin size={13} className="shrink-0 mt-0.5" />
+                    <span>
+                      {vet.street}, {vet.zipCode} {vet.city}
+                      {vet.addressComplement && (
+                        <>
+                          <br />
+                          <span className="text-slate-400">{vet.addressComplement}</span>
+                        </>
+                      )}
+                    </span>
+                  </p>
+                </div>
 
-                {/* Specialties */}
                 {vet.specialties.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-4">
                     {vet.specialties.map((s) => (
@@ -227,7 +243,6 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               <Separator />
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Languages */}
                 {vet.languagesSpoken.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
@@ -241,7 +256,6 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                   </div>
                 )}
 
-                {/* Payment */}
                 {vet.paymentMethods.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
@@ -265,7 +279,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                 </h2>
                 <div className="space-y-2">
                   {DAY_NAMES.map((dayName, dayIdx) => {
-                    const hours = vet.workingHours.find((h) => h.dayOfWeek === dayIdx)
+                    const hours   = vet.workingHours.find((h) => h.dayOfWeek === dayIdx)
                     const isToday = new Date().getDay() === dayIdx
                     return (
                       <div
@@ -275,7 +289,9 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                       >
                         <span className={`font-medium ${isToday ? "text-violet-700" : "text-slate-600"}`}>
                           {dayName}
-                          {isToday && <span className="ml-2 text-xs text-violet-500 font-normal">Aujourd'hui</span>}
+                          {isToday && (
+                            <span className="ml-2 text-xs text-violet-500 font-normal">Aujourd'hui</span>
+                          )}
                         </span>
                         {hours ? (
                           <span className={`text-sm ${isToday ? "text-violet-700 font-semibold" : "text-slate-500"}`}>
@@ -309,7 +325,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               {isLoggedIn ? (
                 <Button
                   asChild
-                  className="w-full bg-linear-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
+                  className="w-full bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
                 >
                   <Link href={`/book/${vet.id}`}>
                     Prendre rendez-vous
@@ -320,7 +336,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                 <div className="space-y-2">
                   <Button
                     asChild
-                    className="w-full bg-linear-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
+                    className="w-full bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:opacity-90 rounded-xl font-semibold gap-2"
                   >
                     <Link href={`/login?callbackUrl=/vets/${vet.id}`}>
                       Se connecter pour réserver
@@ -348,7 +364,13 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
 
               <div className="flex items-start gap-2.5 text-sm text-slate-600">
                 <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" />
-                <span>{vet.street},<br/>{vet.zipCode} {vet.city}</span>
+                <span>
+                  {vet.street}<br />
+                  {vet.addressComplement && (
+                    <><span className="text-slate-400">{vet.addressComplement}</span><br /></>
+                  )}
+                  {vet.zipCode} {vet.city}
+                </span>
               </div>
 
               {vet.clinicPhone && (
@@ -369,9 +391,9 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               </div>
             </div>
 
-            {/* Slot duration info */}
+            {/* Trust badge */}
             <div className="bg-violet-50 border border-violet-100 rounded-xl p-4 text-xs text-violet-700 leading-relaxed">
-              🐾 <strong>Réservation sécurisée</strong><br/>
+              <strong>Réservation sécurisée</strong><br />
               Votre rendez-vous sera confirmé par le vétérinaire. Vous recevrez un e-mail de confirmation.
             </div>
           </div>

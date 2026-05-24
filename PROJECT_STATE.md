@@ -1,4 +1,4 @@
-# Vetalist - Project State (Last Updated: 2026-05-17)
+# Vetalist - Project State (Last Updated: 2026-05-22)
 
 ## 🎯 Business Decisions
 - **Launch Market:** France → French is PRIMARY language for all UI labels, dates, times
@@ -6,6 +6,7 @@
 - **Strategy:** Ship fast, fix/refine after launch. Architectural perfection ≠ broken functionality.
 - **Booking Flow:** Standalone page `/book/[vetId]` (not modal) — shareable URL, mobile-friendly, simpler auth guard
 - **Pre-launch Strategy:** Target 10 vets in Île-de-France first via personal email outreach, then launch to clients
+- **Email Verification:** Skipped for launch — planned post-launch update (force all existing users to verify)
 
 ---
 
@@ -18,39 +19,45 @@
 4. **Vet Dashboard** - Stats, appointments, profile editor, settings, availability
 5. **Admin Dashboard** - Vet review/approve/reject, user management, trusted badges
 6. **Public Search Flow** - Vet cards + vet detail page (no login required) ✅
-7. **Email System** - Resend templates: all French, all templates complete ✅
-8. **Cron Reminders** - Vercel cron every 30 min → sends 24h and 1h reminders
+7. **Email System** - Resend templates: all French, all 8 templates complete ✅
+8. **Cron Reminders** - Vercel cron every 30 min → sends 24h and 1h reminders, all fr-FR ✅
 9. **Server Actions** - All operations covered (auth, onboarding, vet, admin, password-reset, client)
 10. **Prisma Schema** - All models complete + @@unique([vetId, startTime]) ✅
 11. **Error Pages** - `error.tsx` and `not-found.tsx` — French, animated ✅
 12. **Booking Engine** - `/book/[vetId]` full 5-step wizard ✅
 13. **Availability Slots API** - `GET /api/availability/[vetId]/slots?date=YYYY-MM-DD` ✅
-14. **Appointments API** - `POST /api/appointments` with race condition guard + rate limiting + vet email notification ✅
-15. **Client Dashboard** - Overview, appointments, pets, settings ✅
-16. **Client Actions** - Full CRUD for pets, appointments, profile ✅
-17. **NavLink Component** - Shared active state for all dashboards ✅
-18. **Vet Layout** - French labels, NavLink, mobile hamburger ✅
-19. **Admin Layout** - Fixed nav items (admin routes), French labels, mobile hamburger ✅
-20. **Client Layout** - Violet accent, French, mobile hamburger ✅
-21. **French Dates** - `full-icu` + `cross-env` (Windows compatible) ✅
-22. **Image Domains** - All 4 hosts configured in next.config.js ✅
-23. **Middleware** - `/book` protected, search open to all, `/print` public ✅
-24. **Race Condition** - `@@unique([vetId, startTime])` + migration done ✅
-25. **Mobile Sidebars** - All 3 dashboards have Sheet hamburger menu ✅
-26. **SEO** - metadata on all pages, generateMetadata on vet profiles, sitemap.ts, robots.ts ✅
-27. **Cookie Banner** - GDPR compliant, "Tout accepter" + "Essentiels uniquement" ✅
-28. **Print Flyer** - `/print/[vetId]` — A5 printable page with QR code ✅
-29. **Login page** - Fully French ✅
-30. **Register page** - Fully French ✅
-31. **Auth layout fix** - All "use client" auth pages moved metadata to layout.tsx files ✅
-32. **Rate Limiting** - Upstash Redis on suggestions, appointments, password reset ✅
-33. **Code Consistency** - db + sendEmail used everywhere ✅
-34. **Type Safety** - Removed `(vet as any).acceptsEmergencies` cast ✅
+14. **Appointments API** - `POST /api/appointments` with race condition guard + rate limit + XSS sanitize on reason ✅
+15. **Client Dashboard** - Warm Garden redesign, Plus Jakarta Sans + Lora, pets as heroes, mobile-first ✅
+16. **Client Dashboard CSS** - Separated into `app/dashboard/client/client-dashboard.css` ✅
+17. **Client Actions** - Full CRUD for pets, appointments, profile ✅
+18. **NavLink Component** - `icon: React.ReactNode` (NOT LucideIcon — server/client boundary fix) ✅
+19. **Vet Layout** - French labels, NavLink icons as JSX, mobile hamburger + SheetTitle ✅
+20. **Admin Layout** - French labels, NavLink icons as JSX, mobile hamburger + SheetTitle ✅
+21. **Client Layout** - Warm Garden sidebar, mobile hamburger + SheetTitle (accessibility fix) ✅
+22. **French Dates** - `full-icu` + `cross-env` (Windows compatible) ✅
+23. **Image Domains** - All 4 hosts configured in next.config.js ✅
+24. **Middleware** - `/book` protected, search open to all, `/print` public ✅
+25. **Race Condition** - `@@unique([vetId, startTime])` + migration done ✅
+26. **Mobile Sidebars** - All 3 dashboards have Sheet hamburger menu ✅
+27. **SEO** - metadata on all pages, generateMetadata on vet profiles, sitemap.ts, robots.ts ✅
+28. **Cookie Banner** - GDPR compliant, "Tout accepter" + "Essentiels uniquement" ✅
+29. **Print Flyer** - `/print/[vetId]` — A5 printable page with QR code ✅
+30. **Login page** - Fully French ✅
+31. **Register page** - Fully French ✅
+32. **Auth layout fix** - All "use client" auth pages moved metadata to layout.tsx files ✅
+33. **Rate Limiting** - Upstash Redis on suggestions, appointments, password reset ✅
+34. **Code Consistency** - db + sendEmail used everywhere ✅
 35. **Security Fix 1** - `pending_role` cookie → server-side Redis token validation ✅
 36. **Security Fix 2** - Password reset token cleared from URL immediately after validation ✅
 37. **Security Fix 3** - XSS sanitization on vet rejection reason before email ✅
-38. **Vet Booking Email** - Vet notified by email when client books (NEW_BOOKING enum) ✅
-39. **Admin Review French** - All English labels translated in AdminVetReview ✅
+38. **Security Fix 4** - XSS sanitizeText() on booking reason in appointments API ✅
+39. **Vet Booking Email** - Vet notified by email when client books (NEW_BOOKING enum) ✅
+40. **Admin Review French** - All English labels translated in AdminVetReview ✅
+41. **Dead Code Removed** - `api/vets/route.ts` + `VetService` deleted (orphaned, unprotected POST) ✅
+42. **Phone Validation** - French + international regex, enforced client AND server side ✅
+43. **Password Validation** - min 8, max 72, 1 letter, 1 number — specific error messages, client AND server ✅
+44. **`(vet as any)` cast removed** - `vet.acceptsEmergencies` used directly ✅
+45. **Cron dates fr-FR** - Fixed en-GB → fr-FR in reminder emails ✅
 
 ---
 
@@ -61,9 +68,9 @@
 - [ ] Politique de Confidentialité — `/legal/confidentialite`
 - [ ] CGU — `/legal/cgu`
 - **Waiting on:** company name, SIRET, legal address, legal contact email
-- **Plan:** build once 10 vets are onboarded and company info is ready
 
 #### 🟡 Post-Launch — Phase 2
+- [ ] Email verification on signup (post-launch — force existing users to verify)
 - [ ] Map view on search results (Leaflet, free, no API key)
 - [ ] Geocoding — auto lat/lng when vet saves address
 - [ ] JSON-LD structured data — Organization + VeterinaryCare schema for SEO
@@ -85,48 +92,25 @@
 
 ### 🟡 Fix After Launch
 1. **`getVetDashboardData`** loads ALL appointments into memory then filters → N+1 at scale
-2. **Inline `<style>` tags** in dashboard layouts → should use Tailwind consistently
-3. **JSON-LD structured data** missing — Organization + VeterinaryCare schema for SEO
-
-### ✅ Fixed This Session
-- ~~Race condition~~ → `@@unique([vetId, startTime])` + migration ✅
-- ~~Mobile sidebars missing~~ → all 3 dashboards have hamburger ✅
-- ~~SEO missing~~ → metadata + sitemap + robots ✅
-- ~~English labels in dashboards~~ → all French ✅
-- ~~Active nav state~~ → NavLink component ✅
-- ~~`en-GB` locale~~ → `fr-FR` ✅
-- ~~Search blocked unauthenticated~~ → middleware fixed ✅
-- ~~`/book/[vetId]` unprotected~~ → middleware fixed ✅
-- ~~Login/Register page English~~ → fully French ✅
-- ~~metadata on "use client" pages~~ → moved to layout.tsx files ✅
-- ~~Cookie banner missing~~ → GDPR compliant banner ✅
-- ~~Print flyer missing~~ → `/print/[vetId]` with QR code ✅
-- ~~Admin layout had wrong nav items~~ → fixed to admin routes ✅
-- ~~No rate limiting~~ → Upstash Redis on 3 attack vectors ✅
-- ~~`prisma` import inconsistency~~ → uses `db` consistently everywhere ✅
-- ~~`resend.emails.send()` inconsistency~~ → uses `sendEmail()` everywhere ✅
-- ~~`(vet as any).acceptsEmergencies`~~ → type cast removed ✅
-- ~~`pending_role` cookie exploitable~~ → server-side Redis token ✅
-- ~~Password reset token in browser history~~ → cleared from URL immediately ✅
-- ~~XSS in rejection reason~~ → sanitizeText() applied before email ✅
-- ~~No vet email on new booking~~ → newBookingEmail + NEW_BOOKING enum ✅
-- ~~AdminVetReview English labels~~ → all French ✅
-- ~~VetaList logo typo~~ → Vetalist ✅
+2. **JSON-LD structured data** missing — Organization + VeterinaryCare schema for SEO
+3. **No email verification** on signup — anyone can register with unverified email
 
 ---
 
 ## 🔧 Technical Notes
 - **Framework:** Next.js 15.1.0 (Webpack — NOT Turbopack, crashes)
 - **Database:** PostgreSQL via Prisma 5.22.0 (Supabase) — do NOT upgrade to 7.x before launch
-- **Styling:** Tailwind CSS + shadcn/ui + inline `<style>` for dashboard layouts
+- **Styling:** Tailwind CSS + shadcn/ui. Client dashboard uses `client-dashboard.css` (separate file)
 - **Auth:** NextAuth v5 with Google OAuth + Credentials
-- **Email:** Resend — `sendEmail()` in `lib/email.ts`, templates in `emails/templates.ts`
+- **Email:** Resend — `sendEmail()` in `lib/email.ts`, templates in `emails/templates.ts`. Domain not verified yet — will work after vetalist.fr is bought and verified on resend.com/domains
 - **Cron:** Vercel cron every 30 min
 - **ICU/Locale:** `full-icu` + `cross-env` for French dates on Windows dev
 - **Rate Limiting:** Upstash Redis (eu-west-1) via `@upstash/ratelimit` + `@upstash/redis`
 - **Images:** `next.config.js` allows: `i.pravatar.cc`, `images.unsplash.com`, `res.cloudinary.com`, `lh3.googleusercontent.com`
-- **Domain:** Not yet purchased — `vetalist.fr` used as placeholder. Update `NEXT_PUBLIC_APP_URL` when bought.
+- **Domain:** Not yet purchased — `vetalist.fr` used as placeholder. Update `NEXT_PUBLIC_APP_URL` + `RESEND_FROM` when bought.
 - **QR codes:** `qrcode.react` installed — used in print flyer only
+- **NavLink:** `icon` prop must be `React.ReactNode` — passing `LucideIcon` (component ref) causes Next.js server/client boundary error
+- **SheetContent:** Always needs `<VisuallyHidden><SheetTitle>...</SheetTitle></VisuallyHidden>` inside — Radix Dialog accessibility requirement
 
 ---
 
@@ -137,93 +121,80 @@ src/
 │   ├── admin.actions.ts         — toggleVetVerified, getActiveVets
 │   ├── client.actions.ts        — getClientDashboardData, cancelAppointmentByClient,
 │   │                              addPet, updatePet, archivePet,
-│   │                              updateClientProfile, changePassword
+│   │                              updateClientProfile (phone validated),
+│   │                              changePassword (8 chars, 1 letter, 1 number, max 72)
 │   ├── onboarding.actions.ts    — updateVetOnboarding, updateVetProfile, etc.
 │   ├── password-reset.ts        — requestPasswordReset, validateResetToken, resetPassword
-│   │                              ✅ uses db + sendEmail + rate limiting
 │   └── vet.actions.ts           — confirmAppointment, cancelAppointment, toggles,
 │                                  saveWorkingHours, getVetDashboardData,
 │                                  getPendingVets, approveVet, rejectVet
-│                                  ✅ sanitizeText() on rejection reason
+│                                  ✅ no (vet as any) casts, sanitizeText() on rejection
 ├── app/
 │   ├── (auth)/
-│   │   ├── forgot-password/layout.tsx + page.tsx    ✅ French, metadata in layout
-│   │   ├── login/layout.tsx + page.tsx              ✅ fully French, metadata in layout
-│   │   ├── onboarding/layout.tsx + page.tsx         ✅ metadata in layout
-│   │   ├── register/layout.tsx + actions.ts + page.tsx ✅ fully French, metadata in layout
-│   │   └── reset-password/layout.tsx + page.tsx     ✅ token cleared from URL on load
+│   │   ├── forgot-password/layout.tsx + page.tsx
+│   │   ├── login/layout.tsx + page.tsx
+│   │   ├── onboarding/layout.tsx + page.tsx
+│   │   ├── register/layout.tsx + actions.ts + page.tsx
+│   │   └── reset-password/layout.tsx + page.tsx
 │   ├── (public)/
-│   │   ├── search/page.tsx              ✅ metadata, works without login
-│   │   └── vets/[id]/page.tsx           ✅ generateMetadata, type cast removed
+│   │   ├── search/page.tsx
+│   │   └── vets/[id]/page.tsx
 │   ├── api/
-│   │   ├── appointments/route.ts        ✅ POST + race condition + rate limit + vet email
-│   │   ├── auth/oauth-intent/route.ts   ✅ NEW — server-side role token for Google OAuth
-│   │   ├── availability/[vetId]/slots/route.ts — GET free slots
+│   │   ├── appointments/route.ts        ✅ POST + race condition + rate limit + sanitizeText(reason)
+│   │   ├── auth/oauth-intent/route.ts   ✅ server-side Redis role token
+│   │   ├── availability/[vetId]/slots/route.ts
 │   │   ├── auth/[...nextauth]/route.ts
-│   │   ├── cron/reminders/route.ts
+│   │   ├── cron/reminders/route.ts      ✅ all dates fr-FR
 │   │   ├── search/route.ts
-│   │   ├── search/suggestions/route.ts  ✅ rate limited (30 req/min)
-│   │   └── vets/route.ts
-│   ├── book/[vetId]/page.tsx            ✅ metadata, auth guard
+│   │   └── search/suggestions/route.ts  ✅ rate limited
+│   │   ❌ api/vets/route.ts DELETED — was dead code with unprotected POST
+│   ├── book/[vetId]/page.tsx
 │   ├── dashboard/
-│   │   ├── admin/layout.tsx + page.tsx + vets + badges + users  ✅ all metadata, French
-│   │   ├── client/layout.tsx + page.tsx + appointments + pets + settings ✅ all metadata
-│   │   └── vet/layout.tsx + page.tsx + appointments + profile + settings ✅ all metadata
+│   │   ├── admin/layout.tsx + page.tsx + vets + badges + users
+│   │   ├── client/
+│   │   │   ├── client-dashboard.css     ✅ Warm Garden styles, separated from layout
+│   │   │   ├── layout.tsx               ✅ imports CSS, SheetTitle fix, sidebar-inner split
+│   │   │   ├── page.tsx                 ✅ Warm Garden redesign, pets as heroes
+│   │   │   ├── appointments/
+│   │   │   ├── pets/
+│   │   │   └── settings/
+│   │   └── vet/layout.tsx + page.tsx + appointments + profile + settings
 │   ├── legal/                           ❌ NOT BUILT — waiting for company info
-│   ├── print/[vetId]/page.tsx           ✅ A5 flyer, public, no auth
-│   ├── sitemap.ts                       ✅ static routes + all active vet profiles
-│   ├── robots.ts                        ✅ blocks dashboards/api/book from Google
-│   ├── error.tsx + not-found.tsx        ✅ French, animated
-│   ├── layout.tsx                       ✅ root layout, base metadata, title template
-│   └── page.tsx                         ✅ landing page, metadata
+│   ├── print/[vetId]/page.tsx
+│   ├── sitemap.ts
+│   ├── robots.ts
+│   ├── error.tsx + not-found.tsx
+│   ├── layout.tsx
+│   └── page.tsx
 ├── components/
 │   ├── admin/
 │   │   ├── AdminVetReview.tsx           ✅ fully French, XSS sanitized
 │   │   ├── AdminVerifiedControl.tsx
 │   │   └── AdminUsersTable.tsx
-│   ├── booking/BookingWizard.tsx        — 5-step wizard
+│   ├── booking/BookingWizard.tsx
 │   ├── client/
-│   │   ├── AppointmentsClient.tsx       — tabs, cancel modal, badges
-│   │   ├── PetsClient.tsx               — add/edit/archive modals
-│   │   └── SettingsClient.tsx           — profile + password forms
-│   ├── dashboard/NavLink.tsx            — shared active nav (usePathname)
+│   │   ├── AppointmentsClient.tsx
+│   │   ├── PetsClient.tsx
+│   │   └── SettingsClient.tsx           ✅ phone + password validation with error messages
+│   ├── dashboard/NavLink.tsx            ✅ icon: React.ReactNode (NOT LucideIcon)
 │   ├── landing/Hero.tsx, Navbar.tsx, Features.tsx, HowItWorks.tsx, JoinAsVet.tsx, Footer.tsx
 │   ├── search/SearchBar.tsx, VetCard.tsx, SearchFilters.tsx, MobileFilters.tsx
 │   ├── vet/AppointmentTable.tsx, AvailabilityManager.tsx, MultiSelect.tsx,
 │   │       PhotoUpload.tsx, ProfileEditor.tsx, SlotDurationPicker.tsx,
 │   │       TimeOffManager.tsx, VetToggles.tsx
-│   ├── CookieBanner.tsx                 ✅ GDPR: "Tout accepter" + "Essentiels uniquement"
-│   └── PrintFlyer.tsx                   ✅ A5 flyer with QR code
+│   ├── CookieBanner.tsx
+│   └── PrintFlyer.tsx
 ├── emails/templates.ts                  ✅ 8 templates, all French
 ├── lib/
-│   ├── auth.config.ts + auth.ts         ✅ Google OAuth uses server-side Redis token
-│   ├── db.ts                            — Prisma singleton as `db`
-│   ├── email.ts                         — sendEmail() via Resend
+│   ├── auth.config.ts + auth.ts
+│   ├── db.ts
+│   ├── email.ts
 │   ├── get-next-slot.ts
-│   ├── ratelimit.ts                     ✅ Upstash Redis rate limiters
+│   ├── ratelimit.ts
 │   ├── supabase/client.ts + server.ts
-│   ├── utils.ts, prisma.ts, resend.ts, debug-utils.ts
-│   └── validations/onboarding.ts
-└── middleware.ts                        ✅ /book protected, /print public, search open
+│   └── utils.ts, prisma.ts, resend.ts, debug-utils.ts
+└── middleware.ts
 ```
-
----
-
-## 📧 Email Templates (emails/templates.ts)
-All return `{ subject: string, html: string }`:
-
-| Template | Trigger | Recipient |
-|----------|---------|-----------|
-| `confirmationEmail` | Vet confirms appointment | Client |
-| `cancellationEmail` | Vet or client cancels | Client |
-| `reminder24hEmail` | Cron job 24h before | Client |
-| `reminder1hEmail` | Cron job 1h before | Client |
-| `vetApprovedEmail` | Admin approves vet | Vet |
-| `vetRejectedEmail` | Admin rejects vet (sanitized) | Vet |
-| `forgotPasswordEmail` | User requests reset | User |
-| `newBookingEmail` | Client books appointment | Vet |
-
-EmailType enum: `CONFIRMATION, REMINDER_24H, REMINDER_1H, CANCELLATION, FORGOT_PASSWORD, NEW_BOOKING`
 
 ---
 
@@ -240,20 +211,25 @@ EmailType enum: `CONFIRMATION, REMINDER_24H, REMINDER_1H, CANCELLATION, FORGOT_P
 - [x] All dashboards (vet, client, admin)
 - [x] Emails (all French, all 8 templates)
 - [x] SEO + sitemap + robots
-- [x] Mobile sidebars
+- [x] Mobile sidebars + accessibility (SheetTitle)
 - [x] Rate limiting (Upstash)
 - [x] Cookie banner (GDPR)
 - [x] Print flyer for vet outreach
-- [x] French throughout
-- [x] Security fixes (pending_role, reset token, XSS)
+- [x] French throughout (including cron reminder dates)
+- [x] All security fixes
+- [x] Input validation (phone + password) client + server
+- [x] Dead code removed (api/vets)
+- [x] Client dashboard redesigned (Warm Garden, mobile-first)
 - [ ] Legal pages (waiting on company info)
 - [ ] Domain purchased + NEXT_PUBLIC_APP_URL updated
+- [ ] Resend domain verified at resend.com/domains
 - [ ] 10 vets onboarded in Île-de-France
 - [ ] Deploy to Vercel
 
 ## 🚀 Recommended Next Steps (In Order)
-1. **Legal pages** — once company info available
-2. **Domain** — buy vetalist.fr, update NEXT_PUBLIC_APP_URL
-3. **Deploy to Vercel** — production deployment
-4. **Vet outreach** — send personal emails to Île-de-France vets
-5. **Post-launch** — map view, geocoding, reviews, Stripe
+1. **Domain** — buy vetalist.fr, update NEXT_PUBLIC_APP_URL + RESEND_FROM
+2. **Resend** — verify vetalist.fr domain on resend.com/domains (emails currently blocked)
+3. **Legal pages** — once company info available
+4. **Deploy to Vercel** — production deployment
+5. **Vet outreach** — send personal emails to Île-de-France vets
+6. **Post-launch** — email verification, map view, geocoding, reviews, Stripe

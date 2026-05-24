@@ -53,7 +53,7 @@ async function buildAppointmentEmailData(
     clientFirstName: apt.client.firstName,
     vetName: `${apt.vet.user.firstName} ${apt.vet.user.lastName}`,
     clinicName: apt.vet.clinicName ?? "Vetalist Clinic",
-    address: `${apt.vet.street}, ${apt.vet.zipCode} ${apt.vet.city}`,
+    address: [apt.vet.street, apt.vet.addressComplement, `${apt.vet.zipCode} ${apt.vet.city}`].filter(Boolean).join(", "),
     date: new Date(apt.startTime).toLocaleDateString("fr-FR", {
       weekday: "long",
       day: "numeric",

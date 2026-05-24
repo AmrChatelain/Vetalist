@@ -43,6 +43,7 @@ model VetProfile {
   lng                Float?
   street             String
   zipCode            String
+  addressComplement String?
   licenseNumber      String?
   paymentMethods     String[]
   rejectionReason    String?

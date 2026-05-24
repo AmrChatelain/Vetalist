@@ -1,44 +1,74 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/navigation"
-import { onboardingSchema, type OnboardingInput } from "@/lib/validations/onboarding"
-import { updateVetOnboarding, updateVetProfile } from "@/actions/onboarding.actions"
-import { toast } from "sonner"
-import { Save, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { MultiSelect } from "@/components/vet/Multiselect"
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import {
+  onboardingSchema,
+  type OnboardingInput,
+} from "@/lib/validations/onboarding";
+import {
+  updateVetOnboarding,
+  updateVetProfile,
+} from "@/actions/onboarding.actions";
+import { toast } from "sonner";
+import {
+  Save,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  ShieldCheck,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/vet/Multiselect";
 import {
   VETERINARY_SPECIALTIES,
   CARE_TYPES,
   LANGUAGES,
   PAYMENT_METHODS,
-} from "@/lib/veterinary-specialties"
+} from "@/lib/veterinary-specialties";
 
 const STEPS = [
-  { id: 1, title: "Profil professionnel",  desc: "Votre parcours & expertise"       },
-  { id: 2, title: "Licence & Accréditation", desc: "Vérification de votre licence"  },
-  { id: 3, title: "Informations clinique",  desc: "Localisation & contact"          },
-  { id: 4, title: "Paramètres de pratique", desc: "Services & modes de paiement"    },
-]
+  { id: 1, title: "Profil professionnel", desc: "Votre parcours & expertise" },
+  {
+    id: 2,
+    title: "Licence & Accréditation",
+    desc: "Vérification de votre licence",
+  },
+  { id: 3, title: "Informations clinique", desc: "Localisation & contact" },
+  {
+    id: 4,
+    title: "Paramètres de pratique",
+    desc: "Services & modes de paiement",
+  },
+];
 
 interface ProfileEditorProps {
-  defaultValues?: Partial<OnboardingInput>
-  isUpdate?: boolean
+  defaultValues?: Partial<OnboardingInput>;
+  isUpdate?: boolean;
 }
 
-export default function ProfileEditor({ defaultValues, isUpdate = false }: ProfileEditorProps) {
-  const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export default function ProfileEditor({
+  defaultValues,
+  isUpdate = false,
+}: ProfileEditorProps) {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -50,19 +80,20 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
     resolver: zodResolver(onboardingSchema),
     mode: "onChange",
     defaultValues: {
-      bio:             defaultValues?.bio             ?? "",
-      specialties:     defaultValues?.specialties     ?? [],
-      languagesSpoken: defaultValues?.languagesSpoken ?? [],
-      licenseNumber:   defaultValues?.licenseNumber   ?? "",
-      clinicName:      defaultValues?.clinicName      ?? "",
-      clinicPhone:     defaultValues?.clinicPhone     ?? "",
-      city:            defaultValues?.city            ?? "",
-      street:          defaultValues?.street          ?? "",
-      zipCode:         defaultValues?.zipCode         ?? "",
-      careTypes:       defaultValues?.careTypes       ?? [],
-      paymentMethods:  defaultValues?.paymentMethods  ?? [],
+      bio: defaultValues?.bio ?? "",
+      specialties: defaultValues?.specialties ?? [],
+      languagesSpoken: defaultValues?.languagesSpoken ?? ["Français"],
+      licenseNumber: defaultValues?.licenseNumber ?? "",
+      clinicName: defaultValues?.clinicName ?? "",
+      clinicPhone: defaultValues?.clinicPhone ?? "",
+      city: defaultValues?.city ?? "",
+      street: defaultValues?.street ?? "",
+      zipCode: defaultValues?.zipCode ?? "",
+      addressComplement: defaultValues?.addressComplement ?? "",
+      careTypes: defaultValues?.careTypes ?? [],
+      paymentMethods: defaultValues?.paymentMethods ?? [],
     },
-  })
+  });
 
   const nextStep = async () => {
     const fieldsMap: Record<number, (keyof OnboardingInput)[]> = {
@@ -70,28 +101,32 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
       2: ["licenseNumber"],
       3: ["clinicName", "clinicPhone", "city", "street", "zipCode"],
       4: ["careTypes", "paymentMethods"],
-    }
-    const isValid = await trigger(fieldsMap[currentStep] as any)
-    if (isValid) setCurrentStep((s) => s + 1)
-    else toast.error("Veuillez remplir tous les champs obligatoires.")
-  }
+    };
+    const isValid = await trigger(fieldsMap[currentStep] as any);
+    if (isValid) setCurrentStep((s) => s + 1);
+    else toast.error("Veuillez remplir tous les champs obligatoires.");
+  };
 
   const onSubmit = async (data: OnboardingInput) => {
-    setIsSubmitting(true)
-    const action = isUpdate ? updateVetProfile : updateVetOnboarding
-    const result = await action(data)
-    setIsSubmitting(false)
+    setIsSubmitting(true);
+    const action = isUpdate ? updateVetProfile : updateVetOnboarding;
+    const result = await action(data);
+    setIsSubmitting(false);
 
     if (result.success) {
-      toast.success(isUpdate ? "Profil mis à jour avec succès !" : "Profil soumis pour examen !")
-      router.refresh()
-      if (!isUpdate) router.push("/pending-approval")
+      toast.success(
+        isUpdate
+          ? "Profil mis à jour avec succès !"
+          : "Profil soumis pour examen !",
+      );
+      router.refresh();
+      if (!isUpdate) router.push("/pending-approval");
     } else {
-      toast.error(`Erreur : ${result.error}`)
+      toast.error(`Erreur : ${result.error}`);
     }
-  }
+  };
 
-  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100
+  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   return (
     <div className="space-y-6">
@@ -100,25 +135,32 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
         {STEPS.map((step, i) => (
           <React.Fragment key={step.id}>
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all flex-shrink-0
-                ${currentStep > step.id
-                  ? "bg-blue-50 border-blue-500 text-blue-600"
-                  : currentStep === step.id
-                    ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
-                    : "bg-white border-slate-200 text-slate-400"}`}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all flex-shrink-0
+                ${
+                  currentStep > step.id
+                    ? "bg-blue-50 border-blue-500 text-blue-600"
+                    : currentStep === step.id
+                      ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
+                      : "bg-white border-slate-200 text-slate-400"
+                }`}
               >
                 {currentStep > step.id ? <CheckCircle2 size={13} /> : step.id}
               </div>
-              <span className={`text-xs font-semibold hidden sm:block ${
-                currentStep >= step.id ? "text-slate-800" : "text-slate-400"
-              }`}>
+              <span
+                className={`text-xs font-semibold hidden sm:block ${
+                  currentStep >= step.id ? "text-slate-800" : "text-slate-400"
+                }`}
+              >
                 {step.title}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-3 rounded transition-all ${
-                currentStep > step.id ? "bg-blue-500" : "bg-slate-200"
-              }`} />
+              <div
+                className={`flex-1 h-0.5 mx-3 rounded transition-all ${
+                  currentStep > step.id ? "bg-blue-500" : "bg-slate-200"
+                }`}
+              />
             )}
           </React.Fragment>
         ))}
@@ -137,8 +179,12 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base">{STEPS[currentStep - 1].title}</CardTitle>
-                <CardDescription className="mt-0.5">{STEPS[currentStep - 1].desc}</CardDescription>
+                <CardTitle className="text-base">
+                  {STEPS[currentStep - 1].title}
+                </CardTitle>
+                <CardDescription className="mt-0.5">
+                  {STEPS[currentStep - 1].desc}
+                </CardDescription>
               </div>
               <Badge variant="secondary" className="text-xs">
                 Étape {currentStep} / {STEPS.length}
@@ -149,12 +195,14 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
           <Separator />
 
           <CardContent className="pt-6 space-y-4">
-
             {/* ÉTAPE 1 — Profil professionnel */}
             {currentStep === 1 && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="bio" className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <Label
+                    htmlFor="bio"
+                    className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                  >
                     Biographie professionnelle
                   </Label>
                   <Textarea
@@ -163,12 +211,15 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                     placeholder="Décrivez votre expertise, vos années d'expérience et votre approche des soins vétérinaires..."
                     className={`min-h-[110px] ${errors.bio ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                   />
-                  {errors.bio
-                    ? <p className="text-xs text-red-500">{errors.bio.message}</p>
-                    : <p className="text-xs text-slate-400">Min. 20 caractères — visible sur votre profil public.</p>}
+                  {errors.bio ? (
+                    <p className="text-xs text-red-500">{errors.bio.message}</p>
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Min. 20 caractères — visible sur votre profil public.
+                    </p>
+                  )}
                 </div>
 
-                {/* Specialties — MultiSelect */}
                 <div className="relative">
                   <Controller
                     name="specialties"
@@ -187,7 +238,6 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                   />
                 </div>
 
-                {/* Languages — MultiSelect */}
                 <div className="relative">
                   <Controller
                     name="languagesSpoken"
@@ -216,14 +266,20 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                     <ShieldCheck size={15} className="text-blue-600" />
                   </div>
                   <div className="text-sm text-blue-800">
-                    <strong className="block mb-1">Pourquoi nous demandons cela</strong>
-                    Votre numéro de licence est examiné par notre équipe et ne sera jamais affiché publiquement.
-                    Nous le vérifions auprès des registres officiels avant d'approuver votre profil.
+                    <strong className="block mb-1">
+                      Pourquoi nous demandons cela
+                    </strong>
+                    Votre numéro de licence est examiné par notre équipe et ne
+                    sera jamais affiché publiquement. Nous le vérifions auprès
+                    des registres officiels avant d'approuver votre profil.
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="licenseNumber" className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <Label
+                    htmlFor="licenseNumber"
+                    className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                  >
                     Numéro de licence vétérinaire
                   </Label>
                   <Input
@@ -232,11 +288,16 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                     placeholder="ex. VET-FR-123456"
                     className={`font-mono ${errors.licenseNumber ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                   />
-                  {errors.licenseNumber
-                    ? <p className="text-xs text-red-500">{errors.licenseNumber.message}</p>
-                    : <p className="text-xs text-slate-400">
-                        Délivré par l'Ordre National des Vétérinaires ou votre autorité nationale compétente.
-                      </p>}
+                  {errors.licenseNumber ? (
+                    <p className="text-xs text-red-500">
+                      {errors.licenseNumber.message}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Délivré par l'Ordre National des Vétérinaires ou votre
+                      autorité nationale compétente.
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -246,7 +307,10 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="clinicName" className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    <Label
+                      htmlFor="clinicName"
+                      className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                    >
                       Nom de la clinique
                     </Label>
                     <Input
@@ -255,10 +319,17 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                       placeholder="Clinique Vétérinaire des Lilas"
                       className={errors.clinicName ? "border-red-300" : ""}
                     />
-                    {errors.clinicName && <p className="text-xs text-red-500">{errors.clinicName.message}</p>}
+                    {errors.clinicName && (
+                      <p className="text-xs text-red-500">
+                        {errors.clinicName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="clinicPhone" className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    <Label
+                      htmlFor="clinicPhone"
+                      className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                    >
                       Téléphone de la clinique
                     </Label>
                     <Input
@@ -267,26 +338,40 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                       placeholder="+33 1 23 45 67 89"
                       className={errors.clinicPhone ? "border-red-300" : ""}
                     />
-                    {errors.clinicPhone && <p className="text-xs text-red-500">{errors.clinicPhone.message}</p>}
+                    {errors.clinicPhone && (
+                      <p className="text-xs text-red-500">
+                        {errors.clinicPhone.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2 space-y-1.5">
-                    <Label htmlFor="street" className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Adresse
+                    <Label
+                      htmlFor="street"
+                      className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                    >
+                      Adresse <span className="text-red-400">*</span>
                     </Label>
                     <Input
                       id="street"
                       {...register("street")}
-                      placeholder="123 Rue de Rivoli"
+                      placeholder="12 Rue de Rivoli"
                       className={errors.street ? "border-red-300" : ""}
                     />
-                    {errors.street && <p className="text-xs text-red-500">{errors.street.message}</p>}
+                    {errors.street && (
+                      <p className="text-xs text-red-500">
+                        {errors.street.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="zipCode" className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Code postal
+                    <Label
+                      htmlFor="zipCode"
+                      className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                    >
+                      Code postal <span className="text-red-400">*</span>
                     </Label>
                     <Input
                       id="zipCode"
@@ -294,13 +379,48 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                       placeholder="75011"
                       className={errors.zipCode ? "border-red-300" : ""}
                     />
-                    {errors.zipCode && <p className="text-xs text-red-500">{errors.zipCode.message}</p>}
+                    {errors.zipCode && (
+                      <p className="text-xs text-red-500">
+                        {errors.zipCode.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
+                {/* Address complement — optional */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="addressComplement"
+                    className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                  >
+                    Complément d'adresse{" "}
+                    <span className="text-slate-300 font-normal normal-case">
+                      (optionnel)
+                    </span>
+                  </Label>
+                  <Input
+                    id="addressComplement"
+                    {...register("addressComplement")}
+                    placeholder="Bât. B, 2ème étage — Code porte : 1234"
+                    className={errors.addressComplement ? "border-red-300" : ""}
+                  />
+                  <p className="text-xs text-slate-400">
+                    Étage, bâtiment, digicode, interphone… pour que vos clients
+                    trouvent facilement la clinique.
+                  </p>
+                  {errors.addressComplement && (
+                    <p className="text-xs text-red-500">
+                      {errors.addressComplement.message}
+                    </p>
+                  )}
+                </div>
+
                 <div className="max-w-[200px] space-y-1.5">
-                  <Label htmlFor="city" className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    Ville
+                  <Label
+                    htmlFor="city"
+                    className="text-xs font-bold uppercase tracking-wide text-slate-500"
+                  >
+                    Ville <span className="text-red-400">*</span>
                   </Label>
                   <Input
                     id="city"
@@ -308,7 +428,11 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                     placeholder="Paris"
                     className={errors.city ? "border-red-300" : ""}
                   />
-                  {errors.city && <p className="text-xs text-red-500">{errors.city.message}</p>}
+                  {errors.city && (
+                    <p className="text-xs text-red-500">
+                      {errors.city.message}
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -316,7 +440,6 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
             {/* ÉTAPE 4 — Pratique */}
             {currentStep === 4 && (
               <>
-                {/* Care types — MultiSelect */}
                 <div className="relative">
                   <Controller
                     name="careTypes"
@@ -335,7 +458,6 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                   />
                 </div>
 
-                {/* Payment methods — MultiSelect */}
                 <div className="relative">
                   <Controller
                     name="paymentMethods"
@@ -355,13 +477,14 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                 </div>
               </>
             )}
-
           </CardContent>
 
           <Separator />
 
           <CardFooter className="flex items-center justify-between bg-slate-50 py-4">
-            <span className="text-xs text-slate-400">Étape {currentStep} sur {STEPS.length}</span>
+            <span className="text-xs text-slate-400">
+              Étape {currentStep} sur {STEPS.length}
+            </span>
             <div className="flex gap-2">
               {currentStep > 1 && (
                 <Button
@@ -375,15 +498,27 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
                 </Button>
               )}
               {currentStep < STEPS.length ? (
-                <Button type="button" size="sm" onClick={nextStep} className="gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={nextStep}
+                  className="gap-1.5"
+                >
                   Suivant <ArrowRight size={13} />
                 </Button>
               ) : (
-                <Button type="submit" size="sm" disabled={isSubmitting} className="gap-1.5">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmitting}
+                  className="gap-1.5"
+                >
                   <Save size={13} />
                   {isSubmitting
                     ? "Enregistrement..."
-                    : isUpdate ? "Sauvegarder" : "Soumettre pour examen"}
+                    : isUpdate
+                      ? "Sauvegarder"
+                      : "Soumettre pour examen"}
                 </Button>
               )}
             </div>
@@ -391,5 +526,5 @@ export default function ProfileEditor({ defaultValues, isUpdate = false }: Profi
         </Card>
       </form>
     </div>
-  )
+  );
 }
