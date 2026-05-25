@@ -80,6 +80,7 @@ async function SearchResults({ searchParams }: SearchPageProps) {
         { city:        { contains: q, mode: "insensitive" } },
         { clinicName:  { contains: q, mode: "insensitive" } },
         { specialties: { has: q } },
+        {zipCode: { contains: q, mode: "insensitive" } },
         {
           user: {
             OR: [

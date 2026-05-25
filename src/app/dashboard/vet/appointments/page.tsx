@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import db from "@/lib/db";
 import { AppointmentTable } from "@/components/vet/AppointmentTable";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
@@ -10,9 +10,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-
 async function getAppointments(vetProfileId: string) {
-  const appointments = await prisma.appointment.findMany({
+  const appointments = await db.appointment.findMany({
     where: {
       vetId: vetProfileId,
     },
@@ -67,7 +66,7 @@ export default async function VetAppointmentsPage() {
   }
 
   // Find the vet profile associated with this user
-  const vetProfile = await prisma.vetProfile.findUnique({
+  const vetProfile = await db.vetProfile.findUnique({
     where: { userId: session.user.id },
   });
 

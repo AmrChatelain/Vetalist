@@ -1,88 +1,95 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
-import { confirmAppointment, cancelAppointment } from "@/actions/vet.actions"
-import { toast } from "sonner"
-import { AppointmentStatus } from "@prisma/client"
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { confirmAppointment, cancelAppointment } from "@/actions/vet.actions";
+import { toast } from "sonner";
+import { AppointmentStatus } from "@prisma/client";
 import {
-  CheckCircle2, XCircle, Search,
-  Calendar as CalendarIcon, User as UserIcon, Dog,
-  Clock, ChevronDown,
-} from "lucide-react"
+  CheckCircle2,
+  XCircle,
+  Search,
+  Calendar as CalendarIcon,
+  User as UserIcon,
+  Dog,
+  Clock,
+  ChevronDown,
+} from "lucide-react";
 
 interface AppointmentWithDetails {
-  id: string
-  startTime: Date
-  endTime: Date
-  status: AppointmentStatus
-  reason: string
-  notes?: string | null
-  isEmergency: boolean
-  client: { firstName: string; lastName: string }
-  pet?: { name: string; species: string } | null
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  status: AppointmentStatus;
+  reason: string;
+  notes?: string | null;
+  cancellationReason?: string | null;
+  cancelledBy?: string | null;
+  isEmergency: boolean;
+  client: { firstName: string; lastName: string };
+  pet?: { name: string; species: string } | null;
 }
 
 interface AppointmentTableProps {
-  initialAppointments: AppointmentWithDetails[]
-  title?: string
-  showPast?: boolean
+  initialAppointments: AppointmentWithDetails[];
+  title?: string;
+  showPast?: boolean;
 }
 
 const STATUS = {
-  PENDING:   { label: "Pending",   cls: "badge-pending"   },
+  PENDING: { label: "Pending", cls: "badge-pending" },
   CONFIRMED: { label: "Confirmed", cls: "badge-confirmed" },
   CANCELLED: { label: "Cancelled", cls: "badge-cancelled" },
-  DONE:      { label: "Completed", cls: "badge-done"      },
-} as const
+  DONE: { label: "Completed", cls: "badge-done" },
+} as const;
 
-const FILTERS = ["All", "PENDING", "CONFIRMED", "DONE", "CANCELLED"] as const
+const FILTERS = ["All", "PENDING", "CONFIRMED", "DONE", "CANCELLED"] as const;
 
 export function AppointmentTable({
   initialAppointments,
   title = "Appointments",
   showPast = false,
 }: AppointmentTableProps) {
-  const router = useRouter()
-  const [search, setSearch]       = useState("")
-  const [filter, setFilter]       = useState<string>("All")
-  const [isPending, setIsPending] = useState(false)
-  const [expanded, setExpanded]   = useState<string | null>(null)
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<string>("All");
+  const [isPending, setIsPending] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return initialAppointments.filter((a) => {
-      const name    = `${a.client.firstName} ${a.client.lastName}`.toLowerCase()
-      const pet     = a.pet?.name.toLowerCase() ?? ""
-      const q       = search.toLowerCase()
-      const matchQ  = name.includes(q) || pet.includes(q)
-      const matchF  = filter === "All" || a.status === filter
-      return matchQ && matchF
-    })
-  }, [initialAppointments, search, filter])
+      const name = `${a.client.firstName} ${a.client.lastName}`.toLowerCase();
+      const pet = a.pet?.name.toLowerCase() ?? "";
+      const q = search.toLowerCase();
+      const matchQ = name.includes(q) || pet.includes(q);
+      const matchF = filter === "All" || a.status === filter;
+      return matchQ && matchF;
+    });
+  }, [initialAppointments, search, filter]);
 
   async function handleConfirm(id: string) {
-    setIsPending(true)
-    const res = await confirmAppointment(id)
+    setIsPending(true);
+    const res = await confirmAppointment(id);
     if (res.success) {
-      toast.success("Appointment confirmed")
-      router.refresh()
+      toast.success("Appointment confirmed");
+      router.refresh();
     } else {
-      toast.error(res.error ?? "Failed to confirm")
+      toast.error(res.error ?? "Failed to confirm");
     }
-    setIsPending(false)
+    setIsPending(false);
   }
 
   async function handleCancel(id: string) {
-    if (!confirm("Cancel this appointment?")) return
-    setIsPending(true)
-    const res = await cancelAppointment(id, "Cancelled by veterinarian")
+    if (!confirm("Cancel this appointment?")) return;
+    setIsPending(true);
+    const res = await cancelAppointment(id, "Cancelled by veterinarian");
     if (res.success) {
-      toast.success("Appointment cancelled")
-      router.refresh()
+      toast.success("Appointment cancelled");
+      router.refresh();
     } else {
-      toast.error(res.error ?? "Failed to cancel")
+      toast.error(res.error ?? "Failed to cancel");
     }
-    setIsPending(false)
+    setIsPending(false);
   }
 
   return (
@@ -340,7 +347,17 @@ export function AppointmentTable({
         <div className="apt-table-head">
           <div className="apt-table-title">
             {title}
-            <span style={{ marginLeft: 8, fontSize: "0.7rem", background: "#f1f5f9", color: "#64748b", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }}>
+            <span
+              style={{
+                marginLeft: 8,
+                fontSize: "0.7rem",
+                background: "#f1f5f9",
+                color: "#64748b",
+                borderRadius: 20,
+                padding: "2px 8px",
+                fontWeight: 600,
+              }}
+            >
               {filtered.length}
             </span>
           </div>
@@ -387,35 +404,60 @@ export function AppointmentTable({
                 <tr>
                   <td colSpan={6}>
                     <div className="empty-state">
-                      <div className="empty-icon"><CalendarIcon size={20} /></div>
+                      <div className="empty-icon">
+                        <CalendarIcon size={20} />
+                      </div>
                       <div className="empty-title">No appointments found</div>
-                      <div className="empty-sub">Try changing your search or filter.</div>
+                      <div className="empty-sub">
+                        Try changing your search or filter.
+                      </div>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filtered.map((apt) => (
                   <>
-                    <tr key={apt.id} className={expanded === apt.id ? "expanded" : ""}>
+                    <tr
+                      key={apt.id}
+                      className={expanded === apt.id ? "expanded" : ""}
+                    >
                       {/* Date */}
                       <td>
                         <div className="cell-date">
-                          {new Date(apt.startTime).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          {new Date(apt.startTime).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </div>
                         <div className="cell-time">
                           <Clock size={11} />
-                          {new Date(apt.startTime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(apt.startTime).toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                           {" – "}
-                          {new Date(apt.endTime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(apt.endTime).toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </div>
                       </td>
 
                       {/* Client */}
                       <td>
-                        <div className="cell-client" style={{ display: "flex", alignItems: "center" }}>
-                          <UserIcon size={12} style={{ marginRight: 5, color: "#94a3b8" }} />
+                        <div
+                          className="cell-client"
+                          style={{ display: "flex", alignItems: "center" }}
+                        >
+                          <UserIcon
+                            size={12}
+                            style={{ marginRight: 5, color: "#94a3b8" }}
+                          />
                           {apt.client.firstName} {apt.client.lastName}
-                          {apt.isEmergency && <span className="emg-tag">🚨 Urgent</span>}
+                          {apt.isEmergency && (
+                            <span className="emg-tag">🚨 Urgent</span>
+                          )}
                         </div>
                         {apt.pet && (
                           <div className="cell-pet">
@@ -427,7 +469,14 @@ export function AppointmentTable({
 
                       {/* Reason */}
                       <td style={{ maxWidth: 180 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <span
+                          style={{
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {apt.reason}
                         </span>
                       </td>
@@ -474,10 +523,12 @@ export function AppointmentTable({
 
                       {/* Expand */}
                       <td>
-                        {apt.notes && (
+                        {(apt.notes || apt.cancellationReason) && (
                           <button
                             className={`expand-btn ${expanded === apt.id ? "open" : ""}`}
-                            onClick={() => setExpanded(expanded === apt.id ? null : apt.id)}
+                            onClick={() =>
+                              setExpanded(expanded === apt.id ? null : apt.id)
+                            }
                           >
                             <ChevronDown size={15} />
                           </button>
@@ -486,16 +537,44 @@ export function AppointmentTable({
                     </tr>
 
                     {/* Expanded notes row */}
-                    {expanded === apt.id && apt.notes && (
-                      <tr key={`${apt.id}-notes`} className="notes-row">
-                        <td colSpan={6}>
-                          <div className="notes-inner">
-                            <div className="notes-label">Clinical notes</div>
-                            {apt.notes}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                    {expanded === apt.id &&
+                      (apt.notes || apt.cancellationReason) && (
+                        <tr key={`${apt.id}-notes`} className="notes-row">
+                          <td colSpan={6}>
+                            <div
+                              className="notes-inner"
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 10,
+                              }}
+                            >
+                              {apt.cancellationReason && (
+                                <div>
+                                  <div
+                                    className="notes-label"
+                                    style={{ color: "#dc2626" }}
+                                  >
+                                    Raison d'annulation
+                                    {apt.cancelledBy === "CLIENT"
+                                      ? " (par le client)"
+                                      : " (par le vétérinaire)"}
+                                  </div>
+                                  {apt.cancellationReason}
+                                </div>
+                              )}
+                              {apt.notes && (
+                                <div>
+                                  <div className="notes-label">
+                                    Notes cliniques
+                                  </div>
+                                  {apt.notes}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                   </>
                 ))
               )}
@@ -504,5 +583,5 @@ export function AppointmentTable({
         </div>
       </div>
     </>
-  )
+  );
 }

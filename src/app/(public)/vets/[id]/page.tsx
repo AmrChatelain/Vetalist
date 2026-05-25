@@ -72,7 +72,6 @@ function formatNextSlot(slot: Date | null) {
   return                       { label: `${date} à ${time}`,     color: "text-slate-600"   }
 }
 
-// ── Build a full address string ───────────────────────────────────────────────
 function buildAddress(vet: {
   street: string
   addressComplement?: string | null
@@ -83,6 +82,77 @@ function buildAddress(vet: {
   if (vet.addressComplement) parts.push(vet.addressComplement)
   parts.push(`${vet.zipCode} ${vet.city}`)
   return parts.join(", ")
+}
+
+// ── Build VeterinaryCare JSON-LD ─────────────────────────────────────────────
+function buildVetJsonLd(vet: {
+  id: string
+  clinicName: string | null
+  street: string
+  addressComplement: string | null
+  zipCode: string
+  city: string
+  clinicPhone: string | null
+  bio: string | null
+  specialties: string[]
+  languagesSpoken: string[]
+  paymentMethods: string[]
+  photoUrl: string | null
+  acceptsEmergencies: boolean
+  workingHours: { dayOfWeek: number; startTime: string; endTime: string }[]
+  user: { firstName: string; lastName: string; image: string | null }
+}) {
+  const DAY_MAP = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+  const name    = `Dr. ${vet.user.firstName} ${vet.user.lastName}`
+  const photo   = vet.photoUrl ?? vet.user.image
+
+  const openingHours = vet.workingHours.map((h) => ({
+    "@type":     "OpeningHoursSpecification",
+    "dayOfWeek": `https://schema.org/${DAY_MAP[h.dayOfWeek]}`,
+    "opens":     h.startTime,
+    "closes":    h.endTime,
+  }))
+
+  return {
+    "@context": "https://schema.org",
+    "@type":    "VeterinaryCare",
+    "@id":      `https://vetalist.fr/vets/${vet.id}`,
+    "name":     vet.clinicName ?? name,
+    "description": vet.bio ?? `Cabinet vétérinaire de ${name} à ${vet.city}.`,
+    "url":      `https://vetalist.fr/vets/${vet.id}`,
+    ...(photo ? { "image": photo } : {}),
+    "address": {
+      "@type":           "PostalAddress",
+      "streetAddress":   vet.addressComplement
+        ? `${vet.street}, ${vet.addressComplement}`
+        : vet.street,
+      "postalCode":      vet.zipCode,
+      "addressLocality": vet.city,
+      "addressCountry":  "FR",
+    },
+    ...(vet.clinicPhone ? { "telephone": vet.clinicPhone } : {}),
+    "medicalSpecialty": vet.specialties,
+    "availableLanguage": vet.languagesSpoken.length > 0
+      ? vet.languagesSpoken
+      : ["Français"],
+    "paymentAccepted": vet.paymentMethods.join(", "),
+    ...(openingHours.length > 0 ? { "openingHoursSpecification": openingHours } : {}),
+    "potentialAction": {
+      "@type":  "ReserveAction",
+      "target": {
+        "@type":       "EntryPoint",
+        "urlTemplate": `https://vetalist.fr/book/${vet.id}`,
+      },
+      "name": "Prendre rendez-vous",
+    },
+    "priceRange": "€€",
+    "currenciesAccepted": "EUR",
+    "areaServed": {
+      "@type":   "City",
+      "name":    vet.city,
+      "address": { "@type": "PostalAddress", "postalCode": vet.zipCode, "addressCountry": "FR" },
+    },
+  }
 }
 
 export default async function VetProfilePage({ params }: VetProfilePageProps) {
@@ -105,9 +175,15 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
   const DAY_NAMES    = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
   const displayPhoto = vet.photoUrl || vet.user.image
   const isLoggedIn   = !!session?.user
+  const vetJsonLd    = buildVetJsonLd(vet)
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(vetJsonLd) }}
+      />
+
       {/* Back nav */}
       <div className="bg-white border-b border-slate-200 px-4 py-3">
         <div className="max-w-5xl mx-auto">
@@ -180,17 +256,13 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
                   </p>
                 )}
 
-                {/* Address with complement */}
                 <div className="mt-1 text-sm text-slate-400">
                   <p className="flex items-start gap-1.5">
                     <MapPin size={13} className="shrink-0 mt-0.5" />
                     <span>
                       {vet.street}, {vet.zipCode} {vet.city}
                       {vet.addressComplement && (
-                        <>
-                          <br />
-                          <span className="text-slate-400">{vet.addressComplement}</span>
-                        </>
+                        <><br /><span className="text-slate-400">{vet.addressComplement}</span></>
                       )}
                     </span>
                   </p>
@@ -376,10 +448,7 @@ export default async function VetProfilePage({ params }: VetProfilePageProps) {
               {vet.clinicPhone && (
                 <div className="flex items-center gap-2.5 text-sm text-slate-600">
                   <Phone size={14} className="text-slate-400 shrink-0" />
-                  <a
-                    href={`tel:${vet.clinicPhone}`}
-                    className="hover:text-violet-600 transition-colors"
-                  >
+                  <a href={`tel:${vet.clinicPhone}`} className="hover:text-violet-600 transition-colors">
                     {vet.clinicPhone}
                   </a>
                 </div>
