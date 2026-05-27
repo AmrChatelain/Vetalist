@@ -31,7 +31,10 @@ export async function getClientDashboardData() {
 
   const [appointments, pets] = await Promise.all([
     db.appointment.findMany({
-      where: { clientId: client.id },
+      where: {
+        clientId: client.id,
+        startTime: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
+      },
       include: {
         vet: {
           select: {
@@ -48,6 +51,7 @@ export async function getClientDashboardData() {
         pet: { select: { name: true, species: true } },
       },
       orderBy: { startTime: "asc" },
+      take: 200,
     }),
     db.pet.findMany({
       where: { clientId: client.id, isArchived: false },

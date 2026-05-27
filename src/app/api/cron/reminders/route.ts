@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server"
+import { timingSafeEqual } from "crypto"
 import db from "@/lib/db"
 import { sendEmail } from "@/lib/email"
 import { reminder24hEmail, reminder1hEmail } from "@/emails/templates"
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const provided = authHeader ?? ""
+  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`
+  const safe =
+    provided.length === expected.length &&
+    timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+
+  if (!safe) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

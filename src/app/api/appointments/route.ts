@@ -171,20 +171,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const appointment = await db.appointment.create({
-    data: {
-      vetId,
-      clientId: client.id,
-      petId: resolvedPetId,
-      startTime: start,
-      endTime: end,
-      reason,
-      notes: notes ?? null,
-      isEmergency,
-      status: "PENDING",
-      ...snapshot,
-    },
-  });
+  let appointment;
+  try {
+    appointment = await db.appointment.create({
+      data: {
+        vetId,
+        clientId: client.id,
+        petId: resolvedPetId,
+        startTime: start,
+        endTime: end,
+        reason,
+        notes: notes ?? null,
+        isEmergency,
+        status: "PENDING",
+        ...snapshot,
+      },
+    });
+  } catch (e: any) {
+    if (e?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Ce créneau vient d'être pris. Veuillez en choisir un autre." },
+        { status: 409 },
+      );
+    }
+    console.error("Appointment create error:", e);
+    return NextResponse.json({ error: "Erreur interne" }, { status: 500 });
+  }
 
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://vetalist.fr";

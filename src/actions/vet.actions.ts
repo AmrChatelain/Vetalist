@@ -20,7 +20,7 @@ function sanitizeText(input: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;")
-    .trim()
+    .trim();
 }
 
 async function getVetProfile() {
@@ -225,11 +225,15 @@ export async function getVetDashboardData() {
       },
       workingHours: true,
       appointments: {
+        where: {
+          startTime: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
         include: {
           client: { select: { firstName: true, lastName: true } },
           pet: { select: { name: true, species: true } },
         },
         orderBy: { startTime: "asc" },
+        take: 500,
       },
     },
   });
@@ -298,13 +302,12 @@ export async function approveVet(vetProfileId: string) {
 
     const vet = await db.vetProfile.update({
       where: { id: vetProfileId },
-      data: { status: "ACTIVE", isVerified: false }, // isVerified starts false — admin grants badge separately
+      data: { status: "ACTIVE", isVerified: false },
       include: {
         user: { select: { email: true, firstName: true } },
       },
     });
 
-    // Send approval email to vet
     const { subject, html } = vetApprovedEmail(vet.user.firstName);
     await sendEmail({ to: vet.user.email, subject, html });
 
@@ -333,7 +336,6 @@ export async function rejectVet(vetProfileId: string, reason: string) {
       },
     });
 
-    // Send rejection email with reason
     const { subject, html } = vetRejectedEmail(vet.user.firstName, clean);
     await sendEmail({ to: vet.user.email, subject, html });
 
