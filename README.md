@@ -66,13 +66,11 @@ Every major feature was designed in conversation with AI. Every security vulnera
 
 ## 📸 Screenshots
 
-> *Screenshots coming soon — add yours in `.github/assets/` and update these paths.*
-
 <div align="center">
 
 | Homepage |
 |----------|
-| ![Homepage](.github/public/assets/homepage.png)|
+| ![Homepage](.github/assets/homepage.png)|
 
 
 </div>
