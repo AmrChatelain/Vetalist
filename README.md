@@ -3,7 +3,7 @@
 <!-- Replace with your actual logo once ready -->
 <!-- <img src=".github/assets/logo.png" alt="Vetalist Logo" width="120" /> -->
 
-# 🐾 Vetalist
+# Vetalist 🐾
 
 **A production-ready veterinary booking platform for the French market.**
 **Built end-to-end by one developer. AI-collaborated. Security-audited.**
@@ -70,7 +70,7 @@ Every major feature was designed in conversation with AI. Every security vulnera
 
 | Homepage |
 |----------|
-| ![Homepage](.github/assets/homepage.png)|
+| ![Homepage](public/assets/homepage.png)|
 
 
 </div>
@@ -462,7 +462,7 @@ src/
 | **Phase 3** | Stripe subscriptions for vets | 💭 Concept |
 | **Phase 3** | Vet analytics dashboard | 💭 Concept |
 | **Phase 3** | Push notifications | 💭 Concept |
-| **Phase 3** | Arabic language support | 💭 Concept |
+| **Phase 3** | More language support | 💭 Concept |
 
 ---
 
