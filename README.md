@@ -70,13 +70,10 @@ Every major feature was designed in conversation with AI. Every security vulnera
 
 <div align="center">
 
-| Homepage | Search | Booking Wizard |
-|----------|--------|----------------|
-| ![Homepage](.github/assets/homepage.png) | ![Search](.github/assets/search.png) | ![Booking](.github/assets/booking.png) |
+| Homepage |
+|----------|
+| ![Homepage](.github/public/assets/homepage.png)|
 
-| Client Dashboard | Vet Dashboard | Admin Panel |
-|-----------------|---------------|-------------|
-| ![Client](.github/assets/client-dashboard.png) | ![Vet](.github/assets/vet-dashboard.png) | ![Admin](.github/assets/admin.png) |
 
 </div>
 
@@ -501,9 +498,9 @@ The result is a codebase that handles:
 
 <br/>
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Amr_Chatelain-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/amr-chatelain-webdeveloper/?locale=fr)
-[![GitHub](https://img.shields.io/badge/GitHub-AmrChatelain-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AmrChatelain)
-[![Portfolio](https://img.shields.io/badge/Portfolio-achatelain.eu-22c55e?style=for-the-badge&logoColor=white)](https://achatelain.eu/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/amr-chatelain-webdeveloper/?locale=fr)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AmrChatelain)
+[![Portfolio](https://img.shields.io/badge/Portfolio-22c55e?style=for-the-badge&logo=googlechrome&logoColor=white)](https://achatelain.eu/)
 
 <br/>
 
