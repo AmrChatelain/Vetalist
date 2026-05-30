@@ -11,7 +11,7 @@ export async function forgotPasswordAction(email: string) {
   const validated = ForgotPasswordSchema.safeParse({ email });
 
   if (!validated.success) {
-    return { error: validated.error.errors[0].message };
+    return { error: validated.error.issues[0].message };
   }
 
   const supabase = await createServerSupabaseClient();
