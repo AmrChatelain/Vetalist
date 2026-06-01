@@ -26,7 +26,9 @@
 
 <br/>
 
-[![GitHub](https://img.shields.io/badge/GitHub-AmrChatelain-181717?style=flat-square&logo=github)](https://github.com/AmrChatelain) · [![LinkedIn](https://img.shields.io/badge/LinkedIn-Amr_Chatelain-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/amr-chatelain-webdeveloper/?locale=fr)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/amr-chatelain-webdeveloper/?locale=fr)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AmrChatelain)
+[![Portfolio](https://img.shields.io/badge/Portfolio-22c55e?style=for-the-badge&logo=googlechrome&logoColor=white)](https://achatelain.eu/)
 
 </div>
 
